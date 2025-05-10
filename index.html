@@ -357,7 +357,7 @@ async function mintNFT() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const contract = new ethers.Contract(
-      "0xFe15f1f80715877be16951477cd551da4115C9a6", // alamat kontrak Flappy NFT
+      "0xAA66da7322Aa663EFC4594C4825eB82E8D400021", // alamat kontrak Flappy NFT
       ["function mint() public"],
       signer
     );
