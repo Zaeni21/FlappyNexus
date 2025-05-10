@@ -419,25 +419,16 @@ function disconnectWallet() {
   <audio id="bg-music" src="https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeifokiywb2vpbbuwifddxxyr6kxft7bo4j3isoojfdgox7v6tcer7q" autoplay loop hidden></audio>
  <script>
   async function loadNFTImage() {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const nftContract = new ethers.Contract(
-      "0xAA66da7322Aa663EFC4594C4825eB82E8D400021", // Ganti ini dengan address NFT lo (sudah verified)
-      ["function tokenURI(uint256 tokenId) view returns (string)"],
-      signer
-    );
-
-    try {
-      const tokenUri = await nftContract.tokenURI(1); // Token ID pertama
-      const res = await fetch(tokenUri);
-      const metadata = await res.json();
-      document.getElementById("nft-image").src = metadata.image;
-    } catch (e) {
-      console.warn("Failed to load NFT image", e);
-    }
+  try {
+    const res = await fetch("https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/");
+    const metadata = await res.json();
+    document.getElementById("nft-image").src = metadata.image;
+  } catch (e) {
+    console.warn("Failed to load NFT image", e);
   }
+}
 
-  window.onload = loadNFTImage;
+window.onload = loadNFTImage;
 </script>
 </body>
 </html>
