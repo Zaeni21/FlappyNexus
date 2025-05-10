@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Flappy Landak</title>
+  <title>Flappy Nexus</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
@@ -23,7 +23,7 @@
 
 <!-- Game UI -->
 <div id="mode-selection" class="text-center pt-24 space-y-4 z-10 relative">
-  <h1 class="text-3xl font-bold">Flappy Landak</h1>
+  <h1 class="text-3xl font-bold">Flappy Nexus</h1>
   <div class="space-x-4">
     <button onclick="startOffchain()" class="bg-purple-600 px-4 py-2 rounded font-bold">Play Offchain</button>
     <button onclick="startOnchain()" class="bg-green-600 px-4 py-2 rounded font-bold">Play Onchain</button>
@@ -238,16 +238,20 @@ async function connectWallet() {
 }
 
   try {
-    await ethereum.request({
-      method: 'wallet_addEthereumChain',
-      params: [{
-        chainId: '0x279F',
-        chainName: 'Monad Testnet',
-        rpcUrls: ['https://testnet-rpc.monad.xyz'],
-        nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-        blockExplorerUrls: ['https://testnet.monadexplorer.com']
-      }]
-    });
+    await window.ethereum.request({
+  method: 'wallet_addEthereumChain',
+  params: [{
+    chainId: '0x1092', // 4242 desimal = 0x1092 hex
+    chainName: 'Nexus Testnet',
+    nativeCurrency: {
+      name: 'NEX',
+      symbol: 'NEX',
+      decimals: 18
+    },
+    rpcUrls: ['https://rpc.nexus.xyz'],
+    blockExplorerUrls: ['https://explorer.nexus.xyz']
+  }]
+});
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
