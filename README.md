@@ -13,7 +13,7 @@
 
 ## How to Play
 
-1. Open the site: 
+1. Open the site: https://flappynexus.vercel.app/
 2. Click **Connect Wallet** to start onchain mode.
 3. Choose **Play Onchain** or **Play Offchain**.
 4. After the game ends, click **Submit Score** to record your score.
