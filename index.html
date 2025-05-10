@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flappy Landak</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
+
+<!-- Wallet Connect -->
+<div class="absolute top-4 right-4 z-50">
+  <div class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer" id="walletAddress">
+    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+    <span class="text-sm">Connect Wallet</span>
+  </div>
+  <div class="absolute right-0 mt-2 bg-gray-800 border border-gray-600 p-3 rounded hidden z-50" id="walletPopup">
+    <p class="text-green-400 text-sm mb-2">Connected</p>
+    <button class="bg-red-600 hover:bg-red-700 px-2 py-1 text-xs rounded" onclick="disconnectWallet()">Disconnect</button>
+  </div>
+</div>
+
+<!-- Game UI -->
+<div id="mode-selection" class="text-center pt-24 space-y-4 z-10 relative">
+  <h1 class="text-3xl font-bold">Flappy Landak</h1>
+  <div class="space-x-4">
+    <button onclick="startOffchain()" class="bg-purple-600 px-4 py-2 rounded font-bold">Play Offchain</button>
+    <button onclick="startOnchain()" class="bg-green-600 px-4 py-2 rounded font-bold">Play Onchain</button>
+    <button onclick="showLeaderboard()" class="bg-blue-600 px-4 py-2 rounded font-bold">Leaderboard</button>
+    <button onclick="mintSkin()" class="bg-yellow-500 px-4 py-2 rounded font-bold">Mint Skin</button>
+  </div>
+  <div id="score" class="text-xl font-semibold mt-4">Score: 0</div>
+</div>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
+
+<!-- Leaderboard -->
+<div id="leaderboard-popup" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 p-6 rounded shadow-lg z-50 w-80">
+  <h2 class="text-lg font-bold mb-4">Top Players</h2>
+  <ul id="leaderboard-list" class="space-y-1 text-sm"></ul>
+
+  <!-- Tombol distribusi khusus admin -->
+  <div id="admin-distribute" class="mt-4 hidden">
+    <button onclick="distributeRewardsFromContract()" class="bg-green-600 px-4 py-2 rounded font-bold ml-2">
+      Distribusi Reward
+    </button>
+  </div>
+
+  <button onclick="document.getElementById('leaderboard-popup').classList.add('hidden')" class="mt-4 bg-purple-700 px-3 py-1 rounded">
+    Close
+  </button>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let onchain = false;
+let walletAddress = null;
+let isConnected = false;
+
+  let gameOver = false;
+let hasSubmitted = false;
+const contractAddress = "0x228a78f7484dcDD40C33C9Bfb9F7eFEb3d2655D6";
+const fullABI = [
+  {
+    "inputs": [],
+    "name": "getTopPlayers",
+    "outputs": [{
+      "components": [
+        { "internalType": "address", "name": "addr", "type": "address" },
+        { "internalType": "uint256", "name": "score", "type": "uint256" }
+      ],
+      "internalType": "struct Leaderboard.Player[]",
+      "name": "",
+      "type": "tuple[]"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "newScore", "type": "uint256" }],
+    "name": "submitScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "distributeRewards",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+];
+
+const landakImg = new Image();
+landakImg.src = "https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeic2hc4o3ivhtoa3urf4ehgguiehi5crbl2evry5qydcsq2g4ejg7m";
+const bambooImg = new Image();
+bambooImg.src = "https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
+
+const bird = { x: 80, y: canvas.height / 2, width: 50, height: 50, velocity: 0, gravity: 0.06, lift: -2.2 };
+let score = 0, frame = 0, pipes = [], pipeGap = 170, pipeWidth = 60;
+
+function drawBird() {
+  if (landakImg.complete) ctx.drawImage(landakImg, bird.x, bird.y, bird.width, bird.height);
+}
+function drawPipes() {
+  pipes.forEach(p => {
+    if (bambooImg.complete) {
+      ctx.drawImage(bambooImg, p.x, 0, pipeWidth, p.top);
+      ctx.drawImage(bambooImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+    }
+  });
+}
+function update() {
+  if (gameOver) return;
+  
+  frame++;
+  bird.velocity += bird.gravity;
+  bird.y += bird.velocity;
+  if (frame % 150 === 0) {
+    const top = Math.random() * (canvas.height - pipeGap - 200) + 50;
+    const bottom = canvas.height - top - pipeGap;
+    pipes.push({ x: canvas.width, top, bottom, padding: 10 });
+  }
+  pipes.forEach((p, i) => {
+    p.x -= 1.2;
+    if (p.x + pipeWidth < 0) {
+      pipes.splice(i, 1);
+      score++;
+      document.getElementById("score").innerText = "Score: " + score;
+    }
+    if (bird.x < p.x + pipeWidth - p.padding &&
+        bird.x + bird.width > p.x + p.padding &&
+        (bird.y < p.top || bird.y + bird.height > canvas.height - p.bottom)) {
+      showGameOver(score);
+      return;
+    }
+  });
+  if (bird.y + bird.height > canvas.height || bird.y < 0) {
+    showGameOver(score);
+    return;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBird();
+  drawPipes();
+  requestAnimationFrame(update);
+}
+function showGameOver(score) {
+  if (gameOver) return;
+  gameOver = true;
+
+  const overlay = document.createElement('div');
+  overlay.id = "gameOverOverlay"; // kasih ID langsung ke elemen div
+  overlay.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+      justify-content: center; align-items: center; color: white; font-family: sans-serif; z-index: 9999;">
+      
+      <h1 style="font-size: 2em; margin-bottom: 10px;">Game Over!</h1>
+      <p style="font-size: 1.2em; margin-bottom: 20px;">Score: ${score}</p>
+
+      <div class="flex space-x-4">
+        <button onclick="restartGame()" style="padding: 10px 20px; background: #9333ea; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+          Play Again
+        </button>
+        ${onchain ? `
+        <button id="submitBtn" style="padding: 10px 20px; background: #22c55e; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+          Submit Score
+        </button>` : ''}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  if (onchain) {
+    setTimeout(() => {
+      const btn = document.getElementById("submitBtn");
+      if (!btn) return;
+
+      let hasSubmitted = false;
+      btn.addEventListener("click", async () => {
+        if (hasSubmitted) return;
+        hasSubmitted = true;
+        btn.disabled = true;
+        btn.innerText = "Submitting...";
+        try {
+          await submitScoreOnchain(score);
+          btn.innerText = "Submitted!";
+          btn.style.background = "#16a34a";
+        } catch (e) {
+          btn.innerText = "Error!";
+          btn.style.background = "#dc2626";
+        }
+      });
+    }, 100);
+  }
+}
+  function restartGame() {
+  gameOver = false;
+  hasSubmitted = false;
+  score = 0;
+  frame = 0;
+  pipes = [];
+  bird.y = canvas.height / 2;
+  bird.velocity = 0;
+
+  // Hapus overlay game over
+  const overlay = document.getElementById("gameOverOverlay");
+  if (overlay) overlay.remove();
+
+  document.getElementById("score").innerText = "Score: 0";
+
+  update(); // Mulai ulang animasi game
+}
+function startOffchain() {
+  onchain = false;
+  document.getElementById("mode-selection").style.display = "none";
+  update();
+}
+  function startOnchain() {
+  if (!isConnected) {
+    alert("Connect wallet dulu bro!");
+    return;
+  }
+  document.getElementById("mode-selection").style.display = "none";
+  update();
+}
+async function connectWallet() {
+  if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
+  alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
+  return;
+}
+
+  try {
+    await ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: '0x279F',
+        chainName: 'Monad Testnet',
+        rpcUrls: ['https://testnet-rpc.monad.xyz'],
+        nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+        blockExplorerUrls: ['https://testnet.monadexplorer.com']
+      }]
+    });
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    walletAddress = await provider.getSigner().getAddress();
+    onchain = true;
+    isConnected = true;
+
+    // Update tampilan dompet
+    const displayAddress = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
+    document.getElementById("walletAddress").innerHTML = `
+      <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+      <span class="text-sm">${displayAddress}</span>`;
+    document.getElementById("walletPopup").classList.remove("hidden");
+
+    alert("Wallet connected! Klik Play Onchain untuk mulai game.");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal connect wallet");
+  }
+}
+async function submitScoreOnchain(score) {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, fullABI, signer);
+
+    console.log("Submitting score:", score);
+    const tx = await contract.submitScore(score);
+    console.log("TX hash:", tx.hash);
+
+    await tx.wait();
+    console.log("Score submitted successfully!");
+  } catch (err) {
+    console.error("Gagal submit score:", err);
+    alert("Submit gagal: " + err.message);
+  }
+}
+async function showLeaderboard() {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    const contract = new ethers.Contract(contractAddress, fullABI, provider);
+    const players = await contract.getTopPlayers();
+
+    const ul = document.getElementById("leaderboard-list");
+    ul.innerHTML = "";
+
+    players.forEach((player, index) => {
+      const li = document.createElement("li");
+      const shortAddr = player.addr.slice(0, 6) + "..." + player.addr.slice(-4);
+      li.innerHTML = `${index + 1}. ${shortAddr} - ${player.score}`;
+      if (player.addr.toLowerCase() === userAddress.toLowerCase()) {
+        li.style.color = "#22d3ee";
+        li.style.fontWeight = "bold";
+      }
+      ul.appendChild(li);
+    });
+
+    document.getElementById("leaderboard-popup").classList.remove("hidden");
+
+    if (userAddress.toLowerCase() === "0x408e68f9dce5a0cd175cd7c7eefb634d5f03a257") {
+      document.getElementById("admin-distribute").classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error("Gagal ambil leaderboard:", err);
+    alert("Gagal ambil leaderboard!");
+  }
+}
+  async function distributeRewardsFromContract() {
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const user = await signer.getAddress();
+
+    if (user.toLowerCase() !== "0x408e68f9dce5a0cd175cd7c7eefb634d5f03a257") {
+      return alert("Only admin can distribute rewards.");
+    }
+
+    const contract = new ethers.Contract(contractAddress, fullABI, signer);
+    const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
+    await tx.wait();
+
+    alert("Rewards distributed!");
+  } catch (err) {
+    console.error("Gagal distribusi:", err);
+    alert("Distribusi gagal: " + err.message);
+  }
+}
+function mintSkin() {
+  alert("Minting skin coming soon!");
+}
+window.addEventListener("keydown", e => { if (e.code === "Space") bird.velocity = bird.lift; });
+window.addEventListener("touchstart", () => bird.velocity = bird.lift);
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+document.getElementById('walletAddress').addEventListener('click', async () => {
+  if (!isConnected) {
+    await connectWallet();
+  } else {
+    document.getElementById('walletPopup').classList.toggle('hidden');
+  }
+});
+function disconnectWallet() {
+  isConnected = false;
+  onchain = false;
+  walletAddress = null;
+  document.getElementById('walletPopup').classList.add('hidden');
+  document.getElementById('walletAddress').innerHTML = '<div class="w-4 h-4 bg-blue-500 rounded-full"></div><span class="text-sm">Connect Wallet</span>';
+  location.reload();
+}
+</script>
+  <footer>
+  <!-- Footer Teks Kiri Bawah -->
+<div class="fixed bottom-2 left-4 text-gray-500" style="font-size: 5px;">
+  © 2025 Built by JAWIRNFT with passion for degen culture
+</div>
+
+<!-- Ikon kanan bawah -->
+<div class="fixed bottom-2 right-4 flex items-center space-x-3 text-white">
+  <!-- Twitter -->
+  <a href="https://twitter.com/JAWIRNFT" target="_blank" class="hover:text-purple-400">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5" viewBox="0 0 24 24">
+      <path d="M18.244 3h2.852l-6.225 7.1 7.34 10.9h-5.748l-4.126-6.175L6.716 21H3.857l6.651-7.582L3 3h5.82l3.705 5.62L18.244 3Zm-.992 17h1.578L8.72 4H7.086l10.166 16Z"/>
+    </svg>
+  </a>
+  <!-- Instagram -->
+  <a href="https://instagram.com/jawirnft" target="_blank" class="hover:text-pink-400">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5" viewBox="0 0 24 24">
+      <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm9 1.5h-9A4 4 0 0 0 3.5 7.5v9A4 4 0 0 0 7.5 20.5h9a4 4 0 0 0 4-4v-9a4 4 0 0 0-4-4Zm-4.5 3.25a5.25 5.25 0 1 1 0 10.5a5.25 5.25 0 0 1 0-10.5Zm0 1.5a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5Zm4.63-.63a.75.75 0 1 1 1.5 0a.75.75 0 0 1-1.5 0Z"/>
+    </svg>
+  </a>
+</div>
+</footer>
+</body>
+</html>
