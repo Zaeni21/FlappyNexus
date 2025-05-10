@@ -1,6 +1,6 @@
-# Flappy Landak
+# Flappy Nexus
 
-**Flappy Landak** is a browser-based Web3 game featuring an onchain leaderboard. Players can choose to play in **offchain** or **onchain** mode, and submit their high scores directly to the blockchain!
+**Flappy Nexus** is a browser-based Web3 game featuring an onchain leaderboard. Players can choose to play in **offchain** or **onchain** mode, and submit their high scores directly to the blockchain!
 
 ## Features
 
@@ -21,7 +21,7 @@
 
 ## Smart Contract
 
-- **Network**: Monad Testnet
+- **Network**: Testnet or Mainnet
 - **Contract Address**: `0x...` *(Replace with actual address)*
 - **Key Functions**:
   - `submitScore(uint256 score)`
