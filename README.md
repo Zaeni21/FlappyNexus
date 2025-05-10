@@ -51,7 +51,7 @@ The top 10 players each week will receive token rewards:
 - HTML5 Canvas Game Engine
 - JavaScript + Ethers.js
 - TailwindCSS for UI
-- Solidity (on Monad Testnet)
+- Solidity (on Nexus)
 - Deployed with Vercel
 
 ## Developer & Contributions
