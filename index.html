@@ -28,7 +28,7 @@
     <button onclick="startOffchain()" class="bg-purple-600 px-4 py-2 rounded font-bold">Play Offchain</button>
     <button onclick="startOnchain()" class="bg-green-600 px-4 py-2 rounded font-bold">Play Onchain</button>
     <button onclick="showLeaderboard()" class="bg-blue-600 px-4 py-2 rounded font-bold">Leaderboard</button>
-    <button onclick="mintSkin()" class="bg-yellow-500 px-4 py-2 rounded font-bold">Mint Skin</button>
+    <button onclick="mintNFT()" class="bg-yellow-500 px-4 py-2 rounded font-bold">Mint NFT</button>
   </div>
   <div id="score" class="text-xl font-semibold mt-4">Score: 0</div>
 </div>
@@ -348,7 +348,27 @@ async function showLeaderboard() {
   }
 }
 function mintSkin() {
-  alert("Minting skin coming soon!");
+  document.getElementById("mintBtn").addEventListener("click", async () => {
+  if (!isConnected) {
+    alert("Connect wallet dulu bro!");
+    return;
+  }
+
+  try {
+    const contract = new ethers.Contract(
+      "0xE92eE2875aE48D29c0A69B7625BC3b51BAe4b6d9", // alamat smart contract kamu
+      ["function mint() public"], // ABI sederhana hanya fungsi mint
+      signer
+    );
+
+    const tx = await contract.mint();
+    await tx.wait();
+    alert("NFT minted");
+  } catch (err) {
+    console.error(err);
+    alert("Minting gagal!");
+  }
+});
 }
 window.addEventListener("keydown", e => { if (e.code === "Space") bird.velocity = bird.lift; });
 window.addEventListener("touchstart", () => bird.velocity = bird.lift);
