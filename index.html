@@ -347,28 +347,28 @@ async function showLeaderboard() {
     alert("Distribusi gagal: " + err.message);
   }
 }
-function mintSkin() {
-  document.getElementById("mintBtn").addEventListener("click", async () => {
+async function mintNFT() {
   if (!isConnected) {
     alert("Connect wallet dulu bro!");
     return;
   }
 
   try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
     const contract = new ethers.Contract(
-      "0xE92eE2875aE48D29c0A69B7625BC3b51BAe4b6d9", // alamat smart contract kamu
-      ["function mint() public"], // ABI sederhana hanya fungsi mint
+      "0xE92eE2875aE48D29c0A69B7625BC3b51BAe4b6d9", // alamat kontrak Flappy NFT
+      ["function mint() public"],
       signer
     );
 
     const tx = await contract.mint();
     await tx.wait();
-    alert("NFT minted");
+    alert("NFT sukses dimint!");
   } catch (err) {
     console.error(err);
-    alert("Minting gagal!");
+    alert("Minting gagal: " + err.message);
   }
-});
 }
 window.addEventListener("keydown", e => { if (e.code === "Space") bird.velocity = bird.lift; });
 window.addEventListener("touchstart", () => bird.velocity = bird.lift);
