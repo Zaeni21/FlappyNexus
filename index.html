@@ -177,6 +177,7 @@ function showGameOver(score) {
     </div>
   `;
   document.body.appendChild(overlay);
+  document.getElementById("bg-music").pause();
 
   if (onchain) {
     setTimeout(() => {
@@ -222,11 +223,13 @@ function startOffchain() {
   onchain = false;
   document.getElementById("mode-selection").style.display = "none";
   update();
+  document.getElementById("bg-music").play();
 }
   function startOnchain() {
   if (!isConnected) {
     alert("Connect wallet dulu bro!");
     return;
+    document.getElementById("bg-music").play();
   }
   document.getElementById("mode-selection").style.display = "none";
   update();
@@ -384,5 +387,6 @@ function disconnectWallet() {
   </a>
 </div>
 </footer>
+  <audio id="bg-music" src="https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeifokiywb2vpbbuwifddxxyr6kxft7bo4j3isoojfdgox7v6tcer7q" autoplay loop hidden></audio>
 </body>
 </html>
