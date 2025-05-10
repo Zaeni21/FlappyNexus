@@ -421,6 +421,11 @@ function disconnectWallet() {
   async function loadNFTImage() {
   try {
     const res = await fetch("https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/");
+    {
+  name: "Flappy Nexus #1",
+  description: "The first official Flappy Nexus NFT!",
+  image: "https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/"
+}
     const metadata = await res.json();
     document.getElementById("nft-image").src = metadata.image;
   } catch (e) {
