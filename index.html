@@ -32,9 +32,7 @@
   </div>
   <div id="score" class="text-xl font-semibold mt-4">Score: 0</div>
 </div>
-<div id="nft-display" class="mt-4 flex justify-center">
-  <img id="nft-image" src="" alt="My NFT" style="max-width: 150px; border-radius: 12px;" />
-</div>
+
 <!-- Game Canvas -->
 <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
 
@@ -417,23 +415,5 @@ function disconnectWallet() {
 </div>
 </footer>
   <audio id="bg-music" src="https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeifokiywb2vpbbuwifddxxyr6kxft7bo4j3isoojfdgox7v6tcer7q" autoplay loop hidden></audio>
- <script>
-  async function loadNFTImage() {
-  try {
-    const res = await fetch("https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/");
-    {
-  name: "Flappy Nexus #1",
-  description: "The first official Flappy Nexus NFT!",
-  image: "https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/"
-}
-    const metadata = await res.json();
-    document.getElementById("nft-image").src = metadata.image;
-  } catch (e) {
-    console.warn("Failed to load NFT image", e);
-  }
-}
-
-window.onload = loadNFTImage;
-</script>
 </body>
 </html>
