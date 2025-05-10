@@ -223,16 +223,20 @@ function startOffchain() {
   onchain = false;
   document.getElementById("mode-selection").style.display = "none";
   update();
-  document.getElementById("bg-music").play();
+  document.getElementById("bg-music").play().catch(e => {
+  console.warn("Autoplay blocked, will play on next interaction");
+});
 }
   function startOnchain() {
   if (!isConnected) {
     alert("Connect wallet dulu bro!");
     return;
-    document.getElementById("bg-music").play();
   }
   document.getElementById("mode-selection").style.display = "none";
   update();
+    document.getElementById("bg-music").play().catch(e => {
+  console.warn("Autoplay blocked, will play on next interaction");
+});
 }
 async function connectWallet() {
   if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
