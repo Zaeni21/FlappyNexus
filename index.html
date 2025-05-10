@@ -216,7 +216,10 @@ function showGameOver(score) {
   if (overlay) overlay.remove();
 
   document.getElementById("score").innerText = "Score: 0";
-
+    
+document.getElementById("bg-music").play().catch(e => {
+  console.warn("Audio resume blocked:", e);
+});
   update(); // Mulai ulang animasi game
 }
 function startOffchain() {
