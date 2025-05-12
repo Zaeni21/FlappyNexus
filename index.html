@@ -401,32 +401,51 @@ window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
-document.getElementById('walletAddress').addEventListener('click', async () => {
+document.getElementById("walletDisplay").addEventListener("click", async () => {
   if (!isConnected) {
     await connectWallet();
   } else {
-    document.getElementById('walletPopup').classList.toggle('hidden');
+    document.getElementById("walletPopup").classList.toggle("hidden");
   }
 });
+
+function updateWalletStatus(connected) {
+  if (connected) {
+    document.getElementById("wallet-status").classList.remove("bg-gray-500");
+    document.getElementById("wallet-status").classList.add("bg-blue-500");
+    document.getElementById("wallet-text").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
+  } else {
+    document.getElementById("wallet-status").classList.remove("bg-blue-500");
+    document.getElementById("wallet-status").classList.add("bg-gray-500");
+    document.getElementById("wallet-text").textContent = "Connect Wallet";
+  }
+}
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert("Install MetaMask atau OKX Wallet dulu bro!");
+    return;
+  }
+
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    walletAddress = await provider.getSigner().getAddress();
+    isConnected = true;
+    updateWalletStatus(true);
+    document.getElementById("walletPopup").classList.remove("hidden");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal connect wallet");
+  }
+}
+
 function disconnectWallet() {
   isConnected = false;
-  onchain = false;
   walletAddress = null;
-  updateWalletStatus(false); // status warna indikator
-  
-  // Reset teks wallet
-  document.getElementById("wallet-text").textContent = "Connect Wallet";
-  document.getElementById("wallet-status").classList.remove("bg-blue-500");
-  document.getElementById("wallet-status").classList.add("bg-gray-500");
-  
-  // Sembunyikan popup
+  updateWalletStatus(false);
   document.getElementById("walletPopup").classList.add("hidden");
-}
-  function updateWalletStatus(connected) {
-  const status = document.getElementById("wallet-status");
-  status.className = connected
-    ? "w-3 h-3 bg-blue-500 rounded-full"
-    : "w-3 h-3 bg-gray-500 rounded-full";
+  location.reload();
 }
   <footer>
   <!-- Footer Teks Kiri Bawah -->
