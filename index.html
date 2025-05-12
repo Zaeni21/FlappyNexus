@@ -414,6 +414,9 @@ function disconnectWallet() {
   walletAddress = null;
   updateWalletStatus(false);
   document.getElementById("walletPopup").classList.add("hidden");
+  document.getElementById("wallet-text").textContent = "Connect Wallet";
+  document.getElementById("wallet-status").classList.remove("bg-blue-500");
+  document.getElementById("wallet-status").classList.add("bg-gray-500");
 }
   function updateWalletStatus(connected) {
   if (connected) {
