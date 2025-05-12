@@ -339,14 +339,14 @@ async function showLeaderboard() {
     const signer = provider.getSigner();
     const user = await signer.getAddress();
 
+    const contract = new ethers.Contract(contractAddress, abi, signer);
+    const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
+    await tx.wait();
+
     const owner = await contract.owner();
 if (user.toLowerCase() !== owner.toLowerCase()) {
   return alert("Only admin can distribute rewards.");
 }
-
-    const contract = new ethers.Contract(contractAddress, abi, signer);
-    const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
-    await tx.wait();
 
     alert("Rewards distributed!");
   } catch (err) {
