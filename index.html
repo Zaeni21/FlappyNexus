@@ -232,6 +232,7 @@ document.getElementById("bg-music").play().catch(e => {
 function startOffchain() {
   onchain = false;
   document.getElementById("mode-selection").style.display = "none";
+  document.getElementById("hero-image").style.display = "none";
   update();
   document.getElementById("bg-music").play().catch(e => {
   console.warn("Autoplay blocked, will play on next interaction");
@@ -243,6 +244,7 @@ function startOffchain() {
     return;
   }
   document.getElementById("mode-selection").style.display = "none";
+    document.getElementById("hero-image").style.display = "none";
   update();
     document.getElementById("bg-music").play().catch(e => {
   console.warn("Autoplay blocked, will play on next interaction");
