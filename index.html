@@ -65,8 +65,15 @@ let isConnected = false;
 
   let gameOver = false;
 let hasSubmitted = false;
-const contractAddress = "0x00F9Ff977D17D0DB5D7a2F6fbC7C2084Aad11415";
-const fullABI = [
+const contractAddress = "0xFeAEe9a44e45F4a8275BffCCC5E03b712aA407D0";
+const abi = [
+  {
+    "inputs": [],
+    "name": "distributeRewards",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
   {
     "inputs": [],
     "name": "getTopPlayers",
@@ -75,7 +82,7 @@ const fullABI = [
         { "internalType": "address", "name": "addr", "type": "address" },
         { "internalType": "uint256", "name": "score", "type": "uint256" }
       ],
-      "internalType": "struct Leaderboard.Player[]",
+      "internalType": "struct FlappyScore.Player[]",
       "name": "",
       "type": "tuple[]"
     }],
@@ -83,17 +90,15 @@ const fullABI = [
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "uint256", "name": "newScore", "type": "uint256" }],
+    "inputs": [
+      { "internalType": "uint256", "name": "score", "type": "uint256" },
+      { "internalType": "uint8", "name": "v", "type": "uint8" },
+      { "internalType": "bytes32", "name": "r", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "s", "type": "bytes32" }
+    ],
     "name": "submitScore",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "distributeRewards",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   }
 ];
@@ -281,17 +286,18 @@ async function submitScoreOnchain(score) {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
-    const contract = new ethers.Contract(contractAddress, fullABI, signer);
+    const address = await signer.getAddress();
 
-    console.log("Submitting score:", score);
-    const tx = await contract.submitScore(score);
-    console.log("TX hash:", tx.hash);
+    const hash = ethers.utils.solidityKeccak256(["address", "uint256"], [address, score]);
+    const arrayified = ethers.utils.arrayify(hash);
+    const signature = await signer.signMessage(arrayified);
+    const { v, r, s } = ethers.utils.splitSignature(signature);
 
-    await tx.wait();
-    console.log("Score submitted successfully!");
+    const contract = new ethers.Contract(contractAddress, abi, signer);
+    await contract.submitScore(score, v, r, s);
+    alert("Score submitted successfully!");
   } catch (err) {
-    console.error("Gagal submit score:", err);
-    alert("Submit gagal: " + err.message);
+    alert("Submit failed: " + err.message);
   }
 }
 async function showLeaderboard() {
