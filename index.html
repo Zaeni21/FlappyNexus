@@ -340,13 +340,17 @@ async function showLeaderboard() {
     const user = await signer.getAddress();
 
     const contract = new ethers.Contract(contractAddress, abi, signer);
-    const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
-    await tx.wait();
+const wallet = await signer.getAddress();
 
-    const owner = await contract.owner();
-if (user.toLowerCase() !== owner.toLowerCase()) {
+// Ganti ini ke address admin lo (0x58...271F)
+const admin = "0x58c5796edc7001b949693cc2655D190db54c271F";
+
+if (wallet.toLowerCase() !== admin.toLowerCase()) {
   return alert("Only admin can distribute rewards.");
 }
+
+const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
+await tx.wait();
 
     alert("Rewards distributed!");
   } catch (err) {
