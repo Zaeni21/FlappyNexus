@@ -306,9 +306,7 @@ async function showLeaderboard() {
     const signer = provider.getSigner();
     const userAddress = await signer.getAddress();
 
-    const contract = new ethers.Contract(contractAddress, fullABI, provider);
-    const players = await contract.getTopPlayers();
-
+    const contract = new ethers.Contract(contractAddress, abi, provider);
     const ul = document.getElementById("leaderboard-list");
     ul.innerHTML = "";
 
