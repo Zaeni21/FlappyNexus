@@ -6,8 +6,25 @@
   <title>Flappy Nexus</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+  .stars {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: transparent url('https://cdn.pixabay.com/photo/2017/07/17/22/24/stars-2514311_1280.png') repeat;
+    background-size: cover;
+    animation: moveStars 60s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes moveStars {
+    from { background-position: 0 0; }
+    to { background-position: -1000px 1000px; }
+  }
+</style>
 </head>
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
+<div class="stars"></div>
 
 <!-- Wallet Connect -->
 <div class="absolute top-4 right-4 z-50">
