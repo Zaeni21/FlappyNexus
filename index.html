@@ -270,8 +270,8 @@ document.getElementById("bg-music").play().catch(e => {
 }
 function startOffchain() {
   onchain = false;
-  document.getElementById("star-bg").style.display = "none";
-  document.getElementById("starfield").style.display = "none";
+  document.getElementById("forest-bg").style.display = "block";
+document.getElementById("star-bg").style.display = "none";
   document.getElementById("forest-bg").style.display = "block";
   document.getElementById("mode-selection").style.display = "none";
   document.getElementById("hero-image").style.display = "none";
@@ -286,9 +286,9 @@ function startOffchain() {
     alert("Connect wallet dulu bro!");
     return;
   }
+    document.getElementById("forest-bg").style.display = "block";
     document.getElementById("star-bg").style.display = "none";
     document.getElementById("starfield").style.display = "none";
-    document.getElementById("forest-bg").style.display = "block";
   document.getElementById("mode-selection").style.display = "none";
     document.getElementById("hero-image").style.display = "none";
     document.getElementById("social-footer").style.display = "none";
