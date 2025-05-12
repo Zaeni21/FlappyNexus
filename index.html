@@ -18,10 +18,10 @@
     </svg>
 
     <!-- Status bulatan -->
-    <div id="wallet-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
-
-    <span class="text-sm">Connect Wallet</span>
-  </div>
+    <div id="walletAddress" class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer">
+  <div id="wallet-status" class="w-4 h-4 bg-gray-500 rounded-full"></div>
+  <span id="wallet-text" class="text-sm">Connect Wallet</span>
+</div>
 
   <div class="absolute right-0 mt-2 bg-gray-800 border border-gray-600 p-3 rounded hidden z-50" id="walletPopup">
     <p class="text-green-400 text-sm mb-2">Connected</p>
@@ -265,10 +265,11 @@ function startOffchain() {
 });
 }
 async function connectWallet() {
+  iasync function connectWallet() {
   if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
-  alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
-  return;
-}
+    alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
+    return;
+  }
 
   try {
     await ethereum.request({
@@ -281,20 +282,27 @@ async function connectWallet() {
         blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
       }]
     });
+
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
     walletAddress = await provider.getSigner().getAddress();
     onchain = true;
     isConnected = true;
-    updateWalletStatus(true); // pas berhasil connect
+
+    updateWalletStatus(true); // Berhasil connect
 
     // Update tampilan dompet
-const displayAddress = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
-document.querySelector("#walletAddress span").textContent = displayAddress;
-document.getElementById("wallet-status").classList.remove("bg-gray-500");
-document.getElementById("wallet-status").classList.add("bg-blue-500");
+    const displayAddress = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
+    document.querySelector("#walletAddress span").textContent = displayAddress;
+    document.getElementById("wallet-text").textContent = displayAddress;
+document.getElementById("wallet-status").classList.replace("bg-gray-500", "bg-blue-500");
+    document.getElementById("walletPopup").classList.remove("hidden");
 
-document.getElementById("walletPopup").classList.remove("hidden");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal connect wallet");
+  }
+}
 async function submitScoreOnchain(score) {
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -414,9 +422,8 @@ function disconnectWallet() {
 
   // Reset tampilan teks dan warna indikator
   document.querySelector("#walletAddress span").textContent = "Connect Wallet";
-  document.getElementById("wallet-status").classList.remove("bg-blue-500");
-  document.getElementById("wallet-status").classList.add("bg-gray-500");
-
+  document.getElementById("wallet-text").textContent = "Connect Wallet";
+document.getElementById("wallet-status").classList.replace("bg-blue-500", "bg-gray-500");
   // Sembunyikan popup dompet
   document.getElementById("walletPopup").classList.add("hidden");
 
