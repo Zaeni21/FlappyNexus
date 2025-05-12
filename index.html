@@ -26,6 +26,7 @@
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
 <div class="stars absolute inset-0 z-0"></div>
 <canvas id="starfield" class="fixed top-0 left-0 w-full h-full z-0"></canvas>
+  <div id="star-bg" class="stars"></div>
   
 <!-- Wallet Connect -->
 <div class="absolute top-4 right-4 z-50">
@@ -249,7 +250,7 @@ function showGameOver(score) {
   if (overlay) overlay.remove();
 
   document.getElementById("score").innerText = "Score: 0";
-    
+document.getElementById("star-bg").style.display = "block";    
 document.getElementById("bg-music").play().catch(e => {
   console.warn("Audio resume blocked:", e);
 });
@@ -257,6 +258,7 @@ document.getElementById("bg-music").play().catch(e => {
 }
 function startOffchain() {
   onchain = false;
+  document.getElementById("star-bg").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
   document.getElementById("hero-image").style.display = "none";
   document.getElementById("social-footer").style.display = "none";
@@ -270,6 +272,7 @@ function startOffchain() {
     alert("Connect wallet dulu bro!");
     return;
   }
+    document.getElementById("star-bg").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
     document.getElementById("hero-image").style.display = "none";
     document.getElementById("social-footer").style.display = "none";
