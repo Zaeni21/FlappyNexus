@@ -22,17 +22,19 @@
 </div>
 
 <!-- Game UI -->
-<div id="mode-selection" class="text-center pt-24 space-y-4 z-10 relative">
-  <h1 class="text-3xl font-bold">Flappy Nexus</h1>
-  <div class="space-x-4">
-    <button onclick="startOffchain()" class="bg-purple-600 px-4 py-2 rounded font-bold">Play Offchain</button>
-    <button onclick="startOnchain()" class="bg-green-600 px-4 py-2 rounded font-bold">Play Onchain</button>
-    <button onclick="showLeaderboard()" class="bg-blue-600 px-4 py-2 rounded font-bold">Leaderboard</button>
-    <button onclick="mintNFT()" class="bg-yellow-500 px-4 py-2 rounded font-bold">Mint NFT</button>
+<div id="mode-selection" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center space-y-6 z-10">
+  <h1 class="text-4xl font-extrabold text-white drop-shadow-md">Flappy Nexus</h1>
+  <div class="grid grid-cols-2 gap-4 w-72 mx-auto">
+    <button onclick="startOffchain()" class="bg-purple-600 hover:bg-purple-700 transition px-6 py-3 rounded-xl font-bold text-white shadow">Play Offchain</button>
+    <button onclick="startOnchain()" class="bg-green-600 hover:bg-green-700 transition px-6 py-3 rounded-xl font-bold text-white shadow">Play Onchain</button>
+    <button onclick="showLeaderboard()" class="bg-blue-600 hover:bg-blue-700 transition px-6 py-3 rounded-xl font-bold text-white shadow col-span-2">Leaderboard</button>
+    <button onclick="mintNFT()" class="bg-yellow-500 hover:bg-yellow-600 transition px-6 py-3 rounded-xl font-bold text-white shadow col-span-2">Mint NFT</button>
   </div>
-  <div id="score" class="text-xl font-semibold mt-4">Score: 0</div>
+  <div id="score" class="text-lg font-semibold mt-2 text-white drop-shadow">Score: 0</div>
 </div>
-
+  <div class="mt-8 flex justify-center">
+  <img src="https://gateway.pinata.cloud/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4/" alt="Flappy Hero" class="w-40 md:w-56 rounded-xl shadow-xl" />
+</div>
 <!-- Game Canvas -->
 <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
 
