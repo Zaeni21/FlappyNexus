@@ -17,15 +17,16 @@
   animation: moveStars 60s linear infinite;
   z-index: 0;
 }
-
-.forest-bg {
-  background: url('https://cdn.pixabay.com/photo/2016/03/26/13/09/forest-1280x720.jpg') no-repeat center center fixed;
-  background-size: cover;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
+<style>
+  .space-bg {
+    background: url('https://cdn.pixabay.com/photo/2016/11/18/13/47/space-1835809_1280.jpg') no-repeat center center fixed;
+    background-size: cover;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: none;
+  }
 
 @keyframes moveStars {
   from { background-position: 0 0; }
@@ -34,7 +35,7 @@
 </style>
 </head>
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
-<div id="forest-bg" class="forest-bg absolute inset-0 z-0"></div>
+<div id="space-bg" class="space-bg"></div>
 <div id="star-bg" class="stars absolute inset-0 z-0"></div>
 <canvas id="starfield" class="fixed top-0 left-0 w-full h-full z-1"></canvas>
   
@@ -269,8 +270,8 @@ document.getElementById("bg-music").play().catch(e => {
 function startOffchain() {
   onchain = false;
   document.getElementById("mode-selection").style.display = "none";
-  document.getElementById("star-bg").style.display = "block";
-  document.getElementById("forest-bg").style.display = "none";
+  document.getElementById("star-bg").style.display = "none";
+  document.getElementById("space-bg").style.display = "block";
   document.getElementById("hero-image").style.display = "none";
   document.getElementById("social-footer").style.display = "none";
   update();
@@ -286,7 +287,7 @@ function startOffchain() {
     document.getElementById("starfield").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
     document.getElementById("star-bg").style.display = "none";
-  document.getElementById("forest-bg").style.display = "block";
+  document.getElementById("space-bg").style.display = "block";
     document.getElementById("hero-image").style.display = "none";
     document.getElementById("social-footer").style.display = "none";
   update();
