@@ -409,18 +409,6 @@ document.getElementById("walletDisplay").addEventListener("click", async () => {
   }
 });
 
-function updateWalletStatus(connected) {
-  if (connected) {
-    document.getElementById("wallet-status").classList.remove("bg-gray-500");
-    document.getElementById("wallet-status").classList.add("bg-blue-500");
-    document.getElementById("wallet-text").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
-  } else {
-    document.getElementById("wallet-status").classList.remove("bg-blue-500");
-    document.getElementById("wallet-status").classList.add("bg-gray-500");
-    document.getElementById("wallet-text").textContent = "Connect Wallet";
-  }
-}
-
 async function connectWallet() {
   if (!window.ethereum) {
     alert("Install MetaMask atau OKX Wallet dulu bro!");
@@ -445,7 +433,17 @@ function disconnectWallet() {
   walletAddress = null;
   updateWalletStatus(false);
   document.getElementById("walletPopup").classList.add("hidden");
-  location.reload();
+}
+  function updateWalletStatus(connected) {
+  if (connected) {
+    document.getElementById("wallet-status").classList.remove("bg-gray-500");
+    document.getElementById("wallet-status").classList.add("bg-blue-500");
+    document.getElementById("wallet-text").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
+  } else {
+    document.getElementById("wallet-status").classList.remove("bg-blue-500");
+    document.getElementById("wallet-status").classList.add("bg-gray-500");
+    document.getElementById("wallet-text").textContent = "Connect Wallet";
+  }
 }
   <footer>
   <!-- Footer Teks Kiri Bawah -->
