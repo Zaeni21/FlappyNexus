@@ -11,7 +11,7 @@
 
 <!-- Wallet Connect -->
 <div class="absolute top-4 right-4 z-50">
-  <div id="walletAddress" class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer">
+  <div id="walletDisplay" class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer">
     <!-- Ikon dompet -->
     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-2.79M16 12h2" />
@@ -290,10 +290,10 @@ async function connectWallet() {
 
     // Update tampilan dompet
     const displayAddress = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
-    document.querySelector("#walletAddress span").textContent = displayAddress;
-    document.getElementById("wallet-text").textContent = displayAddress;
-document.getElementById("wallet-status").classList.replace("bg-gray-500", "bg-blue-500");
-    document.getElementById("walletPopup").classList.remove("hidden");
+document.getElementById("wallet-text").textContent = displayAddress;
+document.getElementById("wallet-status").classList.remove("bg-gray-500");
+document.getElementById("wallet-status").classList.add("bg-blue-500");
+document.getElementById("walletPopup").classList.remove("hidden");
 
   } catch (err) {
     console.error(err);
@@ -434,6 +434,15 @@ document.getElementById("wallet-status").classList.replace("bg-blue-500", "bg-gr
     status.classList.add(isConnected ? "bg-blue-500" : "bg-gray-500");
   }
 }
+  window.onload = () => {
+  document.getElementById('walletDisplay').addEventListener('click', async () => {
+    if (!isConnected) {
+      await connectWallet();
+    } else {
+      document.getElementById('walletPopup').classList.toggle('hidden');
+    }
+  });
+};
 </script>
   <footer>
   <!-- Footer Teks Kiri Bawah -->
