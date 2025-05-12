@@ -11,18 +11,24 @@
 
 <!-- Wallet Connect -->
 <div class="absolute top-4 right-4 z-50">
-  <div id="walletDisplay" class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer">
+  <div class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full cursor-pointer" id="walletAddress">
+    <!-- Ikon dompet -->
     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-2.79M16 12h2" />
     </svg>
-    <div id="wallet-status" class="w-4 h-4 bg-gray-500 rounded-full"></div>
-    <span id="wallet-text" class="text-sm">Connect Wallet</span>
+
+    <!-- Status bulatan -->
+    <div id="wallet-status" class="w-3 h-3 bg-gray-500 rounded-full"></div>
+
+    <span class="text-sm">Connect Wallet</span>
   </div>
-  <div id="walletPopup" class="absolute right-0 mt-2 bg-gray-800 border border-gray-600 p-3 rounded hidden z-50">
+
+  <div class="absolute right-0 mt-2 bg-gray-800 border border-gray-600 p-3 rounded hidden z-50" id="walletPopup">
     <p class="text-green-400 text-sm mb-2">Connected</p>
     <button class="bg-red-600 hover:bg-red-700 px-2 py-1 text-xs rounded" onclick="disconnectWallet()">Disconnect</button>
   </div>
 </div>
+
 <!-- Game UI -->
 <div id="mode-selection" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center space-y-6 z-10">
   <h1 class="text-4xl font-extrabold text-white drop-shadow-md">Flappy Nexus</h1>
@@ -258,19 +264,11 @@ function startOffchain() {
   console.warn("Autoplay blocked, will play on next interaction");
 });
 }
-document.getElementById('walletDisplay').addEventListener('click', async () => {
-  if (!isConnected) {
-    await connectWallet();
-  } else {
-    document.getElementById('walletPopup').classList.toggle('hidden');
-  }
-});
-
 async function connectWallet() {
-  if (!window.ethereum) {
-    alert("Install MetaMask atau OKX Wallet dulu bro!");
-    return;
-  }
+  if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
+  alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
+  return;
+}
 
   try {
     await ethereum.request({
@@ -283,31 +281,25 @@ async function connectWallet() {
         blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
       }]
     });
-
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
     walletAddress = await provider.getSigner().getAddress();
     onchain = true;
     isConnected = true;
+    updateWalletStatus(true); // pas berhasil connect
 
+    // Update tampilan dompet
     const displayAddress = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-3);
-    document.getElementById("wallet-text").textContent = displayAddress;
-    document.getElementById("wallet-status").classList.replace("bg-gray-500", "bg-blue-500");
+    document.getElementById("walletAddress").innerHTML = `
+      <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+      <span class="text-sm">${displayAddress}</span>`;
     document.getElementById("walletPopup").classList.remove("hidden");
 
+    alert("Wallet connected! Klik Play Onchain untuk mulai game.");
   } catch (err) {
     console.error(err);
     alert("Gagal connect wallet");
   }
-}
-
-function disconnectWallet() {
-  isConnected = false;
-  onchain = false;
-  walletAddress = null;
-  document.getElementById("wallet-text").textContent = "Connect Wallet";
-  document.getElementById("wallet-status").classList.replace("bg-blue-500", "bg-gray-500");
-  document.getElementById("walletPopup").classList.add("hidden");
 }
 async function submitScoreOnchain(score) {
   try {
@@ -421,28 +413,21 @@ document.getElementById('walletAddress').addEventListener('click', async () => {
     document.getElementById('walletPopup').classList.toggle('hidden');
   }
 });
-  // Sembunyikan popup dompet
-  document.getElementById("walletPopup").classList.add("hidden");
-
-  // Reload game state kalau mau reset total
-  location.reload(); 
+function disconnectWallet() {
+  isConnected = false;
+  onchain = false;
+  walletAddress = null;
+  updateWalletStatus(false); // pas disconnect
+  document.getElementById('walletPopup').classList.add('hidden');
+  document.getElementById('walletAddress').innerHTML = '<div class="w-4 h-4 bg-blue-500 rounded-full"></div><span class="text-sm">Connect Wallet</span>';
+  location.reload();
 }
-  function updateWalletStatus(isConnected) {
+  function updateWalletStatus(connected) {
   const status = document.getElementById("wallet-status");
-  if (status) {
-    status.classList.remove("bg-blue-500", "bg-gray-500");
-    status.classList.add(isConnected ? "bg-blue-500" : "bg-gray-500");
-  }
+  status.className = connected
+    ? "w-3 h-3 bg-blue-500 rounded-full"
+    : "w-3 h-3 bg-gray-500 rounded-full";
 }
-  window.onload = () => {
-  document.getElementById('walletDisplay').addEventListener('click', async () => {
-    if (!isConnected) {
-      await connectWallet();
-    } else {
-      document.getElementById('walletPopup').classList.toggle('hidden');
-    }
-  });
-};
 </script>
   <footer>
   <!-- Footer Teks Kiri Bawah -->
