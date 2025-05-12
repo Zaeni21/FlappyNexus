@@ -260,6 +260,13 @@ function startOffchain() {
   console.warn("Autoplay blocked, will play on next interaction");
 });
 }
+  document.getElementById("walletDisplay").addEventListener("click", async () => {
+  if (!isConnected) {
+    await connectWallet();
+  } else {
+    document.getElementById("walletPopup").classList.toggle("hidden");
+  }
+});
 async function connectWallet() {
   if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
   alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
@@ -401,32 +408,6 @@ window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
-document.getElementById("walletDisplay").addEventListener("click", async () => {
-  if (!isConnected) {
-    await connectWallet();
-  } else {
-    document.getElementById("walletPopup").classList.toggle("hidden");
-  }
-});
-
-async function connectWallet() {
-  if (!window.ethereum) {
-    alert("Install MetaMask atau OKX Wallet dulu bro!");
-    return;
-  }
-
-  try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    walletAddress = await provider.getSigner().getAddress();
-    isConnected = true;
-    updateWalletStatus(true);
-    document.getElementById("walletPopup").classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-    alert("Gagal connect wallet");
-  }
-}
 
 function disconnectWallet() {
   isConnected = false;
