@@ -9,34 +9,32 @@
   
   <style>
   .stars {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    background: transparent url('https://cdn.pixabay.com/photo/2017/07/17/22/24/stars-2514311_1280.png') repeat;
-    background-size: cover;
-    animation: moveStars 60s linear infinite;
-    z-index: 0;
-  }
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: transparent url('https://cdn.pixabay.com/photo/2017/07/17/22/24/stars-2514311_1280.png') repeat;
+  background-size: cover;
+  animation: moveStars 60s linear infinite;
+  z-index: 0;
+}
 
-  @keyframes moveStars {
-    from { background-position: 0 0; }
-    to { background-position: -1000px 1000px; }
-  }
-</style>
-  <style>
-  .forest-bg {
+.forest-bg {
   background: url('https://cdn.pixabay.com/photo/2016/03/26/13/09/forest-1280x720.jpg') no-repeat center center fixed;
   background-size: cover;
   position: fixed;
   width: 100%;
   height: 100%;
-  z-index: 1; /* sebelumnya 0 */
-  display: none;
+  z-index: 0;
+}
+
+@keyframes moveStars {
+  from { background-position: 0 0; }
+  to { background-position: -1000px 1000px; }
 }
 </style>
 </head>
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
-<div id="forest-bg" class="forest-bg absolute inset-0 z-1"></div>
+<div id="forest-bg" class="forest-bg absolute inset-0 z-0"></div>
 <div id="star-bg" class="stars absolute inset-0 z-0"></div>
 <canvas id="starfield" class="fixed top-0 left-0 w-full h-full z-1"></canvas>
   
@@ -270,10 +268,9 @@ document.getElementById("bg-music").play().catch(e => {
 }
 function startOffchain() {
   onchain = false;
-  document.getElementById("forest-bg").style.display = "block";
-document.getElementById("star-bg").style.display = "none";
-  document.getElementById("forest-bg").style.display = "block";
   document.getElementById("mode-selection").style.display = "none";
+  document.getElementById("star-bg").style.display = "block";
+  document.getElementById("forest-bg").style.display = "none";
   document.getElementById("hero-image").style.display = "none";
   document.getElementById("social-footer").style.display = "none";
   update();
@@ -286,10 +283,10 @@ document.getElementById("star-bg").style.display = "none";
     alert("Connect wallet dulu bro!");
     return;
   }
-    document.getElementById("forest-bg").style.display = "block";
-    document.getElementById("star-bg").style.display = "none";
     document.getElementById("starfield").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
+    document.getElementById("star-bg").style.display = "none";
+  document.getElementById("forest-bg").style.display = "block";
     document.getElementById("hero-image").style.display = "none";
     document.getElementById("social-footer").style.display = "none";
   update();
