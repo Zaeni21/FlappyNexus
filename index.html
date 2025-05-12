@@ -343,7 +343,7 @@ async function showLeaderboard() {
       return alert("Only admin can distribute rewards.");
     }
 
-    const contract = new ethers.Contract(contractAddress, fullABI, signer);
+    const contract = new ethers.Contract(contractAddress, abi, signer);
     const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
     await tx.wait();
 
