@@ -305,8 +305,10 @@ async function showLeaderboard() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const userAddress = await signer.getAddress();
-
     const contract = new ethers.Contract(contractAddress, abi, provider);
+
+    const players = await contract.getTopPlayers();
+    console.log("Top players:", players); // Debug ini
     const ul = document.getElementById("leaderboard-list");
     ul.innerHTML = "";
 
@@ -322,12 +324,12 @@ async function showLeaderboard() {
     });
 
     document.getElementById("leaderboard-popup").classList.remove("hidden");
-
+    
     if (userAddress.toLowerCase() === "0x58c5796edc7001b949693cc2655d190db54c271f") {
       document.getElementById("admin-distribute").classList.remove("hidden");
     }
-  } catch (err) {
-    console.error("Gagal ambil leaderboard:", err);
+  }catch (err) {
+    console.error("Leaderboard error:", err); // Tambahkan ini
     alert("Gagal ambil leaderboard!");
   }
 }
@@ -337,7 +339,7 @@ async function showLeaderboard() {
     const signer = provider.getSigner();
     const user = await signer.getAddress();
 
-    if (user.toLowerCase() !== "0x58c5796edc7001b949693cc2655d190db54c271f") {
+    if (user.toLowerCase() !== "0x58c5796edc7001b949693cc2655D190db54c271F") {
       return alert("Only admin can distribute rewards.");
     }
 
