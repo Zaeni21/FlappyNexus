@@ -22,6 +22,17 @@
     to { background-position: -1000px 1000px; }
   }
 </style>
+  <style>
+  @keyframes fly {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+
+  #hero-image {
+    animation: fly 2s ease-in-out infinite;
+  }
+</style>
 </head>
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
 <div id="star-bg" class="stars absolute inset-0 z-0"></div>
