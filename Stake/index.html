@@ -55,115 +55,246 @@
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 <script>
-let provider, signer, walletAddress = "";
-let contract;
-let balance = 0;
-let totalStaked = 0;
-let mode = "stake";
+  let provider, signer, walletAddress, contract;
+  let balance = 0, totalStaked = 0;
+  let mode = "stake";
 
-const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-const abi = [ /* isi ABI kamu di sini */ ];
-
-async function connectWallet() {
-  if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
-
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("wallet_addEthereumChain", [{
-    chainId: '0x189',
-    chainName: 'Nexus',
-    rpcUrls: ['https://rpc.nexus.xyz/http'],
-    nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
-    blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
-  }]);
-
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  walletAddress = await signer.getAddress();
-
-  contract = new ethers.Contract(contractAddress, abi, signer);
-
-  const rawBal = await provider.getBalance(walletAddress);
-  balance = parseFloat(ethers.utils.formatEther(rawBal));
-
-  const staked = await contract.getStakedAmount(walletAddress);
-  const reward = await contract.pendingReward(walletAddress);
-  totalStaked = parseFloat(ethers.utils.formatEther(staked));
-
-  document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
-  document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
-  document.getElementById("totalStaked").textContent = `${totalStaked.toFixed(2)} NEX`;
-  document.getElementById("pendingRewards").textContent = `${parseFloat(ethers.utils.formatEther(reward)).toFixed(2)} NEX`;
-
-  document.getElementById("connectBtn").classList.add("hidden");
-  document.getElementById("disconnectBtn").classList.remove("hidden");
-
-  setMode(mode);
-}
-
-function disconnectWallet() {
-  walletAddress = null;
-  signer = null;
-  balance = 0;
-
-  document.getElementById("walletAddress").textContent = "-";
-  document.getElementById("walletBalance").textContent = "Balance: -";
-  document.getElementById("connectBtn").classList.remove("hidden");
-  document.getElementById("disconnectBtn").classList.add("hidden");
-
-  document.getElementById("amount").value = "";
-  document.getElementById("percentageText").textContent = "0%";
-  document.getElementById("slider").value = 0;
-}
-
-function setMode(selected) {
-  mode = selected;
-
-  document.getElementById("stakeBtn").className = selected === "stake"
-    ? "bg-gray-900 text-white py-2 rounded"
-    : "bg-gray-200 text-gray-800 py-2 rounded";
-    
-  document.getElementById("unstakeBtn").className = selected === "unstake"
-    ? "bg-gray-900 text-white py-2 rounded"
-    : "bg-gray-200 text-gray-800 py-2 rounded";
-
-  if (selected === "unstake") {
-    document.getElementById("amount").value = totalStaked.toFixed(2);
-    document.getElementById("slider").value = 100;
-    document.getElementById("percentageText").textContent = "100%";
-  } else {
-    document.getElementById("amount").value = "";
-    document.getElementById("slider").value = 0;
-    document.getElementById("percentageText").textContent = "0%";
+  const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64"; // Nexus
+  const abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "claimReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "depositReward",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getStakedAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "pendingReward",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "stake",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "stakers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardDebt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalStaked",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "unstake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
-}
+];
 
-document.getElementById("slider").addEventListener("input", () => {
-  const val = (parseFloat(document.getElementById("slider").value) / 100) * (mode === 'stake' ? balance : totalStaked);
-  document.getElementById("amount").value = val.toFixed(2);
-  document.getElementById("percentageText").textContent = `${document.getElementById("slider").value}%`;
+  async function connectWallet() {
+    if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    await provider.send("wallet_addEthereumChain", [{
+      chainId: '0x189',
+      chainName: 'Nexus',
+      rpcUrls: ['https://rpc.nexus.xyz/http'],
+      nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
+      blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+    }]);
+
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
+    document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+    document.getElementById("connectBtn").classList.add("hidden");
+    document.getElementById("disconnectBtn").classList.remove("hidden");
+
+    const rawBal = await provider.getBalance(walletAddress);
+    balance = parseFloat(ethers.utils.formatEther(rawBal));
+    document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+
+    const staked = await contract.getStakedAmount(walletAddress);
+    const reward = await contract.pendingReward(walletAddress);
+    totalStaked = parseFloat(ethers.utils.formatEther(staked));
+
+    document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
+    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+
+    setMode(mode);
+  }
+
+  function disconnectWallet() {
+    provider = null;
+    signer = null;
+    walletAddress = null;
+    balance = 0;
+
+    document.getElementById("walletAddress").textContent = "-";
+    document.getElementById("walletBalance").textContent = "Balance: -";
+    document.getElementById("connectBtn").classList.remove("hidden");
+    document.getElementById("disconnectBtn").classList.add("hidden");
+
+    document.getElementById("amount").style.display = "none";
+    document.getElementById("slider").style.display = "none";
+    document.getElementById("percentageText").style.display = "none";
+  }
+
+  function setMode(selected) {
+    mode = selected;
+    document.getElementById('stakeBtn').className =
+      selected === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+    document.getElementById('unstakeBtn').className =
+      selected === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+
+    const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
+    document.getElementById("amount").style.display = showForm ? "block" : "none";
+    document.getElementById("slider").style.display = showForm ? "block" : "none";
+    document.getElementById("percentageText").style.display = showForm ? "block" : "none";
+
+    if (mode === 'unstake') {
+      document.getElementById("amount").value = totalStaked.toFixed(2);
+    }
+  }
+
+  async function confirmAction() {
+    const amount = parseFloat(document.getElementById("amount").value);
+    if (!walletAddress) return alert("Please connect wallet.");
+    if (!amount || amount <= 0) return alert("Enter valid amount.");
+
+    const value = ethers.utils.parseEther(amount.toString());
+    const tx = mode === "stake"
+      ? await contract.stake({ value })
+      : await contract.unstake(value);
+
+    await tx.wait();
+    alert(`${mode} successful`);
+    window.location.reload();
+  }
+
+  window.onload = () => {
+    document.getElementById("connectBtn").addEventListener("click", connectWallet);
+  };
+  const slider = document.getElementById("slider");
+const amountInput = document.getElementById("amount");
+const percentageText = document.getElementById("percentageText");
+
+slider.addEventListener("input", () => {
+  const val = (parseFloat(slider.value) / 100) * balance;
+  amountInput.value = val.toFixed(2);
+  percentageText.textContent = `${slider.value}%`;
 });
 
-document.getElementById("amount").addEventListener("input", () => {
-  const input = parseFloat(document.getElementById("amount").value);
-  const ref = mode === "stake" ? balance : totalStaked;
-  const percent = (input / ref) * 100;
-  document.getElementById("slider").value = Math.min(percent, 100).toFixed(0);
-  document.getElementById("percentageText").textContent = `${document.getElementById("slider").value}%`;
+amountInput.addEventListener("input", () => {
+  const val = Math.min(balance, parseFloat(amountInput.value) || 0);
+  slider.value = ((val / balance) * 100).toFixed(0);
+  percentageText.textContent = `${slider.value}%`;
 });
-
-async function confirmAction() {
-  const amt = parseFloat(document.getElementById("amount").value);
-  if (!signer || isNaN(amt) || amt <= 0) return alert("Enter valid amount.");
-
-  const value = ethers.utils.parseEther(amt.toString());
-  const tx = mode === "stake"
-    ? await contract.stake({ value })
-    : await contract.unstake(value);
-
-  await tx.wait();
-  alert(`${mode} successful`);
-  window.location.reload();
-}
 </script>
 </body>
 </html>
