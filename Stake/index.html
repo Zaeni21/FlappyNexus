@@ -84,17 +84,16 @@ document.getElementById("disconnectBtn").classList.remove("hidden");
     }
 
     function disconnectWallet() {
-      walletAddress = null;
-      provider = null;
-      signer = null;
-      balance = 0;
+  walletAddress = null;
+  provider = null;
+  signer = null;
+  balance = 0;
 
-      document.getElementById("walletAddress").textContent = "-";
-      document.getElementById("walletBalance").textContent = "Balance: -";
-      document.getElementById("walletStatus").textContent = "Connect";
-      document.getElementById("walletStatus").classList.add("cursor-pointer");
-      document.getElementById("disconnectBtn").classList.add("hidden");
-    }
+  document.getElementById("walletAddress").textContent = "-";
+  document.getElementById("walletBalance").textContent = "Balance: -";
+  document.getElementById("connectBtn").classList.remove("hidden");
+  document.getElementById("disconnectBtn").classList.add("hidden");
+}
 
     const slider = document.getElementById("slider");
     const amountInput = document.getElementById("amount");
