@@ -195,11 +195,13 @@
 	}
 ];
   let contract;
+let mode = "stake"; // default
 
-  async function connectWallet() {
-    if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
+async function connectWallet() {
+  if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
+
+  try {
     provider = new ethers.providers.Web3Provider(window.ethereum);
-
     await provider.send("wallet_addEthereumChain", [{
       chainId: '0x189', 
       chainName: 'Nexus',
@@ -218,7 +220,7 @@
     document.getElementById("connectBtn").classList.add("hidden");
     document.getElementById("disconnectBtn").classList.remove("hidden");
 
-    const rawBal = await provider.getBalance(walletAddress);
+    const rawBal = await signer.getBalance();
     balance = parseFloat(ethers.utils.formatEther(rawBal));
     document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
 
@@ -230,68 +232,103 @@
     document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
 
     setMode(mode);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to connect wallet.");
   }
+}
 
   function disconnectWallet() {
-    walletAddress = null;
-    provider = null;
-    signer = null;
-    balance = 0;
+  walletAddress = null;
+  signer = null;
+  balance = 0;
 
-    document.getElementById("walletAddress").textContent = "-";
-    document.getElementById("walletBalance").textContent = "Balance: -";
-    document.getElementById("connectBtn").classList.remove("hidden");
-    document.getElementById("disconnectBtn").classList.add("hidden");
+  // Jangan null-kan provider, karena window.ethereum tetap bisa dipakai
+  // provider = null; // HAPUS baris ini
 
-    document.getElementById("amount").style.display = "none";
-    document.getElementById("slider").style.display = "none";
-    document.getElementById("percentageText").style.display = "none";
+  document.getElementById("walletAddress").textContent = "-";
+  document.getElementById("walletBalance").textContent = "Balance: -";
+  document.getElementById("connectBtn").classList.remove("hidden");
+  document.getElementById("disconnectBtn").classList.add("hidden");
+
+  document.getElementById("amount").style.display = "none";
+  document.getElementById("slider").style.display = "none";
+  document.getElementById("percentageText").style.display = "none";
+
+  // Sembunyikan stakeSection biar ga bisa interact
+  const stakeSection = document.getElementById("stakeSection");
+  if (stakeSection) stakeSection.classList.add("hidden");
+
+  // Reset lock timer kalau ada
+  const timer = document.getElementById("countdownTimer");
+  if (timer) {
+    timer.classList.add("hidden");
+    timer.textContent = "";
   }
+}
 
-  function setMode(selected) {
-    mode = selected;
-    document.getElementById('stakeBtn').className =
-      selected === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
-    document.getElementById('unstakeBtn').className =
-      selected === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+  async function setMode(m) {
+  mode = m; // Menggunakan mode yang diterima sebagai parameter
 
-    const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
-    document.getElementById("amount").style.display = showForm ? "block" : "none";
-    document.getElementById("slider").style.display = showForm ? "block" : "none";
-    document.getElementById("percentageText").style.display = showForm ? "block" : "none";
-  }
+  // Set class untuk tombol Stake dan Unstake
+  document.getElementById('stakeBtn').className =
+    mode === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
 
-  const slider = document.getElementById("slider");
-  const amountInput = document.getElementById("amount");
-  const percentageText = document.getElementById("percentageText");
+  document.getElementById('unstakeBtn').className =
+    mode === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
 
-  slider.addEventListener("input", () => {
-    const val = (parseFloat(slider.value) / 100) * balance;
-    amountInput.value = val.toFixed(2);
-    percentageText.textContent = `${slider.value}%`;
-  });
+  // Menampilkan form dan slider jika mode stake atau mode unstake dengan total staked lebih dari 0
+  const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
+  document.getElementById("amount").style.display = showForm ? "block" : "none";
+  document.getElementById("slider").style.display = showForm ? "block" : "none";
+  document.getElementById("percentageText").style.display = showForm ? "block" : "none";
+}
 
-  amountInput.addEventListener("input", () => {
-    const val = Math.min(balance, parseFloat(amountInput.value) || 0);
-    slider.value = ((val / balance) * 100).toFixed(0);
-    percentageText.textContent = `${slider.value}%`;
-  });
+// Ambil elemen DOM
+const slider = document.getElementById("slider");
+const amountInput = document.getElementById("amount");
+const percentageText = document.getElementById("percentageText");
+
+// Update amount dan percentage saat slider digeser
+slider.addEventListener("input", () => {
+  const val = (parseFloat(slider.value) / 100) * balance;
+  amountInput.value = val.toFixed(2);
+  percentageText.textContent = `${slider.value}%`;
+});
+
+// Update slider dan percentage saat amount input diubah
+amountInput.addEventListener("input", () => {
+  const val = Math.min(balance, parseFloat(amountInput.value) || 0);
+  slider.value = ((val / balance) * 100).toFixed(0);
+  percentageText.textContent = `${slider.value}%`;
+});
 
   async function confirmAction() {
+  try {
     const amt = parseFloat(amountInput.value);
-    if (!walletAddress) return alert("Please connect wallet.");
-    if (!amt || amt <= 0) return alert("Enter amount.");
-    if (amt > balance) return alert("Insufficient balance.");
+    if (!signer) return alert("Please connect wallet.");
+    if (!amt || amt <= 0) return alert("Enter valid amount.");
 
     const value = ethers.utils.parseEther(amt.toString());
-    const tx = mode === "stake"
-      ? await contract.stake({ value })
-      : await contract.unstake(value);
+    const txContract = contract.connect(signer);
 
-    await tx.wait();
+    if (mode === "stake") {
+      if (amt > parseFloat(ethers.utils.formatEther(balance))) return alert("Insufficient balance.");
+      const tx = await txContract.stake({ value });
+      await tx.wait();
+    } else {
+      if (amt > parseFloat(ethers.utils.formatEther(totalStaked))) return alert("You don't have enough staked amount.");
+      const tx = await txContract.unstake(value);
+      await tx.wait();
+    }
+
     alert(`${mode} successful`);
     window.location.reload();
+  } catch (err) {
+    console.error(err);
+    alert("Transaction failed or cancelled.");
   }
+}
 </script>
 </body>
 </html>
