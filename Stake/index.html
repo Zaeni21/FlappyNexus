@@ -18,8 +18,10 @@
           <p id="walletAddress" class="font-mono">-</p>
         </div>
         <div class="space-x-2">
-          <span id="walletStatus" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
-          <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
+          <span id="walletStatus">
+  <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
+  <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
+</span>
         </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
@@ -73,9 +75,8 @@
       walletAddress = await signer.getAddress();
 
       document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
-      document.getElementById("walletStatus").textContent = "Connected";
-      document.getElementById("walletStatus").classList.remove("cursor-pointer");
-      document.getElementById("disconnectBtn").classList.remove("hidden");
+      document.getElementById("connectBtn").classList.add("hidden");
+document.getElementById("disconnectBtn").classList.remove("hidden");
 
       const rawBal = await provider.getBalance(walletAddress);
       balance = parseFloat(ethers.utils.formatEther(rawBal));
