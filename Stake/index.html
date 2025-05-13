@@ -70,6 +70,23 @@ amountInput.addEventListener("input", () => {
 
 async function connectWallet() {
   if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
+
+  // Tambahin jaringan Nexus dulu
+  await window.ethereum.request({
+    method: 'wallet_addEthereumChain',
+    params: [{
+      chainId: '0x189', // 393 desimal
+      chainName: 'Nexus',
+      rpcUrls: ['https://rpc.nexus.xyz/http'],
+      nativeCurrency: {
+        name: 'NEX',
+        symbol: 'NEX',
+        decimals: 18
+      },
+      blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+    }]
+  });
+  
   provider = new ethers.providers.Web3Provider(window.ethereum);
   await provider.send("eth_requestAccounts", []);
   signer = provider.getSigner();
