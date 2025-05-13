@@ -1,30 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-3xl font-bold">Stake NEX</h1>
-      <div>
-        <button id="walletStatus" onclick="connectWallet()" class="text-blue-600 text-sm">Connect</button>
-        <button id="disconnectBtn" onclick="disconnectWallet()" class="text-sm text-red-500 hidden ml-2">Disconnect</button>
+    <h1 class="text-3xl font-bold mb-6 flex justify-between items-center">
+      Stake NEX
+      <div class="space-x-2">
+        <span id="walletStatus" onclick="connectWallet()" class="text-blue-600 cursor-pointer">Connect</span>
+        <span id="disconnectBtn" onclick="disconnectWallet()" class="text-red-600 hidden cursor-pointer">Disconnect</span>
       </div>
-    </div>
+    </h1>
 
     <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <div class="flex justify-between text-sm">
-        <div>
-          <p class="text-gray-500">Wallet</p>
-          <p id="walletAddress" class="font-mono">-</p>
-          <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
-        </div>
-      </div>
+      <div class="text-sm mb-1 text-gray-500">Wallet</div>
+      <div id="walletAddress" class="font-mono mb-1">-</div>
+      <p id="walletBalance" class="text-sm text-gray-500">Balance: -</p>
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
           <p class="text-gray-500">Total Staked</p>
@@ -37,127 +33,242 @@
       </div>
     </div>
 
-    <div id="stakingForm" class="bg-white shadow rounded-lg p-4 hidden">
-      <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
+    <div id="stakingForm" class="bg-white shadow rounded-lg p-4">
+      <label class="block text-sm text-gray-500 mb-1">Amount</label>
       <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-2">
-      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-2">
-      <p id="percentageLabel" class="text-right text-xs text-gray-500 mb-2">0%</p>
+      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-1">
+      <p id="percentage" class="text-right text-sm text-gray-500 mb-2">0%</p>
+
       <div class="grid grid-cols-2 gap-4 mb-3">
-        <button onclick="stake()" class="bg-gray-900 text-white py-2 rounded">Stake</button>
-        <button onclick="unstake()" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
+        <button onclick="selectMode('stake')" id="stakeBtn" class="bg-gray-900 text-white py-2 rounded">Stake</button>
+        <button onclick="selectMode('unstake')" id="unstakeBtn" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
-      <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
+
+      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
     </div>
 
-    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT for degen culture</p>
+    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
-<script>
-  const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-  const abi = [
-    { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
-    { "inputs": [], "name": "claimReward", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-    { "inputs": [], "name": "depositReward", "outputs": [], "stateMutability": "payable", "type": "function" },
-    { "inputs": [{ "internalType": "address", "name": "user", "type": "address" }], "name": "getStakedAmount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [{ "internalType": "address", "name": "user", "type": "address" }], "name": "pendingReward", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [], "name": "stake", "outputs": [], "stateMutability": "payable", "type": "function" },
-    { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "stakers", "outputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }, { "internalType": "uint256", "name": "rewardDebt", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [], "name": "totalStaked", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-    { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "unstake", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-    { "stateMutability": "payable", "type": "receive" }
-  ];
+  <script>
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
+    const abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "claimReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "depositReward",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getStakedAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "pendingReward",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "stake",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "stakers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardDebt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalStaked",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "unstake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+];
+    const contract = new ethers.Contract(contractAddress, abi, provider);
 
-  let provider, signer, contract, walletAddress;
+    let signer, walletAddress, mode = "stake", balance = 0;
 
-  const amountInput = document.getElementById("amount");
-  const slider = document.getElementById("slider");
-  const percentLabel = document.getElementById("percentageLabel");
-
-  slider.addEventListener("input", () => {
-    amountInput.value = slider.value;
-    percentLabel.textContent = `${slider.value}%`;
-  });
-
-  amountInput.addEventListener("input", () => {
-    const value = Math.min(100, parseFloat(amountInput.value) || 0);
-    slider.value = value;
-    percentLabel.textContent = `${value}%`;
-  });
-
-  async function connectWallet() {
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: "0x189",
-          chainName: "Nexus",
-          rpcUrls: ["https://rpc.nexus.xyz/http"],
-          nativeCurrency: { name: "NEX", symbol: "NEX", decimals: 18 },
-          blockExplorerUrls: ["https://nexus-new.explorer.caldera.xyz"]
-        }]
-      });
-
-      provider = new ethers.providers.Web3Provider(window.ethereum);
+    async function connectWallet() {
       await provider.send("eth_requestAccounts", []);
       signer = provider.getSigner();
       walletAddress = await signer.getAddress();
-      contract = new ethers.Contract(contractAddress, abi, signer);
 
-      document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+      document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
       document.getElementById("walletStatus").textContent = "Connected";
+      document.getElementById("walletStatus").classList.remove("cursor-pointer");
       document.getElementById("disconnectBtn").classList.remove("hidden");
 
-      const balance = await provider.getBalance(walletAddress);
-      document.getElementById("walletBalance").textContent = "Balance: " + ethers.utils.formatEther(balance).slice(0,6) + " NEX";
+      const bal = await provider.getBalance(walletAddress);
+      balance = parseFloat(ethers.utils.formatEther(bal));
+      document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(3)} NEX`;
 
-      await refreshData();
-    } catch (e) {
-      alert("Failed to connect wallet");
-      console.error(e);
+      const staked = await contract.getStakedAmount(walletAddress);
+      document.getElementById("totalStaked").textContent = `${ethers.utils.formatEther(staked)} NEX`;
+
+      const reward = await contract.pendingReward(walletAddress);
+      document.getElementById("pendingRewards").textContent = `${ethers.utils.formatEther(reward)} NEX`;
     }
-  }
 
-  function disconnectWallet() {
-    walletAddress = null;
-    provider = null;
-    document.getElementById("walletAddress").textContent = "-";
-    document.getElementById("walletBalance").textContent = "Balance: -";
-    document.getElementById("walletStatus").textContent = "Connect";
-    document.getElementById("disconnectBtn").classList.add("hidden");
-    document.getElementById("stakingForm").classList.add("hidden");
-  }
+    function disconnectWallet() {
+      signer = null;
+      walletAddress = "";
+      document.getElementById("walletAddress").textContent = "-";
+      document.getElementById("walletBalance").textContent = "Balance: -";
+      document.getElementById("walletStatus").textContent = "Connect";
+      document.getElementById("walletStatus").classList.add("cursor-pointer");
+      document.getElementById("disconnectBtn").classList.add("hidden");
+    }
 
-  async function refreshData() {
-    const total = await contract.totalStaked();
-    document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(total)).toFixed(2) + " NEX";
+    const amountInput = document.getElementById("amount");
+    const slider = document.getElementById("slider");
+    const percentage = document.getElementById("percentage");
 
-    const pending = await contract.pendingReward(walletAddress);
-    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(pending)).toFixed(2) + " NEX";
+    slider.addEventListener("input", () => {
+      const val = parseFloat(slider.value);
+      percentage.textContent = `${val}%`;
+      amountInput.value = ((balance * val) / 100).toFixed(2);
+    });
 
-    const staked = await contract.getStakedAmount(walletAddress);
-    document.getElementById("stakingForm").classList.toggle("hidden", staked.eq(0));
-  }
+    amountInput.addEventListener("input", () => {
+      const val = parseFloat(amountInput.value) || 0;
+      const perc = Math.min(100, (val / balance) * 100);
+      slider.value = perc;
+      percentage.textContent = `${perc.toFixed(0)}%`;
+    });
 
-  async function stake() {
-    const amount = ethers.utils.parseEther(amountInput.value || "0");
-    const tx = await contract.stake({ value: amount });
-    await tx.wait();
-    await refreshData();
-  }
+    function selectMode(m) {
+      mode = m;
+      document.getElementById("stakeBtn").classList.toggle("bg-gray-900", m === "stake");
+      document.getElementById("stakeBtn").classList.toggle("text-white", m === "stake");
+      document.getElementById("stakeBtn").classList.toggle("bg-gray-200", m !== "stake");
+      document.getElementById("stakeBtn").classList.toggle("text-gray-800", m !== "stake");
 
-  async function unstake() {
-    const amount = ethers.utils.parseEther(amountInput.value || "0");
-    const tx = await contract.unstake(amount);
-    await tx.wait();
-    await refreshData();
-  }
+      document.getElementById("unstakeBtn").classList.toggle("bg-gray-900", m === "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("text-white", m === "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("bg-gray-200", m !== "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("text-gray-800", m !== "unstake");
+    }
 
-  async function claimReward() {
-    const tx = await contract.claimReward();
-    await tx.wait();
-    await refreshData();
-  }
-</script>
+    async function confirmAction() {
+      if (!signer) return alert("Connect wallet first.");
+      const amount = ethers.utils.parseEther(amountInput.value);
+      const instance = contract.connect(signer);
+      try {
+        if (mode === "stake") {
+          const tx = await instance.stake({ value: amount });
+          await tx.wait();
+        } else {
+          const tx = await instance.unstake(amount);
+          await tx.wait();
+        }
+        alert("Success");
+      } catch (err) {
+        console.error(err);
+        alert("Error during transaction");
+      }
+    }
+  </script>
 </body>
 </html>
