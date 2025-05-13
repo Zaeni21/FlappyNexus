@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,17 +37,18 @@
     </div>
 
     <div id="stakeSection" class="bg-white shadow rounded-lg p-4 hidden">
-      <!-- Durasi pilihan -->
-<label class="block text-sm text-gray-500 mt-4 mb-1">Lock Duration</label>
-<div class="grid grid-cols-3 gap-2 text-sm mb-3">
-  <button onclick="setDuration(1209600)" class="bg-gray-200 py-1 rounded">2W</button>
-  <button onclick="setDuration(2592000)" class="bg-gray-200 py-1 rounded">1M</button>
-  <button onclick="setDuration(15552000)" class="bg-gray-200 py-1 rounded">6M</button>
-  <button onclick="setDuration(31536000)" class="bg-gray-200 py-1 rounded">1Y</button>
-  <button onclick="setDuration(999999999)" class="bg-gray-200 py-1 rounded col-span-3">MAX</button>
-</div>
-<div id="countdownTimer" class="text-xs text-red-600 font-mono text-center hidden mb-2"></div>
-      
+      <label class="block text-sm text-gray-500 mt-4 mb-1">Lock Duration</label>
+      <div class="grid grid-cols-3 gap-2 text-sm mb-3">
+        <button onclick="setDuration(1209600)" class="bg-gray-200 py-1 rounded">2W</button>
+        <button onclick="setDuration(2592000)" class="bg-gray-200 py-1 rounded">1M</button>
+        <button onclick="setDuration(15552000)" class="bg-gray-200 py-1 rounded">6M</button>
+        <button onclick="setDuration(31536000)" class="bg-gray-200 py-1 rounded">1Y</button>
+        <button onclick="setDuration(999999999)" class="bg-gray-200 py-1 rounded col-span-3">MAX</button>
+      </div>
+      <div id="countdownTimer" class="text-xs text-red-600 font-mono text-center hidden mb-2"></div>
+
+      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
+
       <div class="flex justify-between text-xs text-gray-500">
         <span></span><span id="percentLabel">0%</span>
       </div>
@@ -57,155 +59,132 @@
         <button onclick="selectMode('unstake')" id="unstakeBtn" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
 
-      <!-- Confirm Button -->
-<button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
-</div> <!-- Ini nutup div id="stakeSection" -->
+      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
+    </div>
 
-<!-- Footer -->
-<p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
-</div>
+    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
+  </div>
 
   <script>
-const provider = new ethers.providers.Web3Provider(window.ethereum);
-let signer, walletAddress = "", mode = "stake", balance = 0;
-let lockEndTime = null, lockInterval = null;
-let selectedDuration = 0;
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    let signer, walletAddress = "", mode = "stake", balance = 0;
+    let lockEndTime = null, lockInterval = null;
+    let selectedDuration = 0;
 
-const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-const abi = [ /* ABI kamu di sini */ ];
-const contract = new ethers.Contract(contractAddress, abi, provider);
+    const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
+    const abi = [/* <<<<< INSERT ABI HERE >>>>> */];
+    const contract = new ethers.Contract(contractAddress, abi, provider);
 
-function setDuration(seconds) {
-  selectedDuration = seconds;
-  startCountdown(seconds);
-}
+    function setDuration(seconds) {
+      selectedDuration = seconds;
+      startCountdown(seconds);
+    }
 
-function selectMode(m) {
-  mode = m;
-  const stakeBtn = document.getElementById("stakeBtn");
-  const unstakeBtn = document.getElementById("unstakeBtn");
-  if (m === "stake") {
-    stakeBtn.classList.add("bg-gray-900", "text-white");
-    stakeBtn.classList.remove("bg-gray-200", "text-gray-800");
-    unstakeBtn.classList.add("bg-gray-200", "text-gray-800");
-    unstakeBtn.classList.remove("bg-gray-900", "text-white");
-  } else {
-    unstakeBtn.classList.add("bg-gray-900", "text-white");
-    unstakeBtn.classList.remove("bg-gray-200", "text-gray-800");
-    stakeBtn.classList.add("bg-gray-200", "text-gray-800");
-    stakeBtn.classList.remove("bg-gray-900", "text-white");
-  }
-}
+    function selectMode(m) {
+      mode = m;
+      document.getElementById("stakeBtn").classList.toggle("bg-gray-900", m === "stake");
+      document.getElementById("stakeBtn").classList.toggle("bg-gray-200", m !== "stake");
+      document.getElementById("stakeBtn").classList.toggle("text-white", m === "stake");
+      document.getElementById("stakeBtn").classList.toggle("text-gray-800", m !== "stake");
 
-async function connectWallet() {
-  try {
-    await ethereum.request({
-      method: 'wallet_addEthereumChain',
-      params: [{
-        chainId: '0x189',
-        chainName: 'Nexus',
-        rpcUrls: ['https://rpc.nexus.xyz/http'],
-        nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
-        blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
-      }]
+      document.getElementById("unstakeBtn").classList.toggle("bg-gray-900", m === "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("bg-gray-200", m !== "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("text-white", m === "unstake");
+      document.getElementById("unstakeBtn").classList.toggle("text-gray-800", m !== "unstake");
+    }
+
+    async function connectWallet() {
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      walletAddress = await signer.getAddress();
+      const network = await provider.getNetwork();
+      if (network.chainId !== 424) return alert("Switch to Nexus Network");
+
+      document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+      document.getElementById("walletStatus").textContent = "Connected";
+      document.getElementById("walletStatus").classList.remove("cursor-pointer");
+      document.getElementById("disconnectBtn").classList.remove("hidden");
+
+      balance = await provider.getBalance(walletAddress);
+      document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,6)} NEX`;
+
+      const staked = await contract.getStakedAmount(walletAddress);
+      const reward = await contract.pendingReward(walletAddress);
+
+      document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
+      document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+      document.getElementById("stakeSection").classList.remove("hidden");
+    }
+
+    function disconnectWallet() {
+      signer = null;
+      walletAddress = "";
+      document.getElementById("walletAddress").textContent = "-";
+      document.getElementById("walletBalance").textContent = "Balance: -";
+      document.getElementById("walletStatus").textContent = "Connect";
+      document.getElementById("walletStatus").classList.add("cursor-pointer");
+      document.getElementById("disconnectBtn").classList.add("hidden");
+      document.getElementById("stakeSection").classList.add("hidden");
+    }
+
+    async function confirmAction() {
+      const amount = document.getElementById("amount").value;
+      if (!amount || isNaN(amount)) return alert("Enter a valid amount");
+
+      const value = ethers.utils.parseEther(amount);
+      const txContract = contract.connect(signer);
+
+      if (mode === "stake") {
+        const tx = await txContract.stake({ value });
+        await tx.wait();
+        if (selectedDuration > 0) startCountdown(selectedDuration);
+      } else {
+        const tx = await txContract.unstake(value);
+        await tx.wait();
+      }
+
+      alert(`${mode} successful`);
+      window.location.reload();
+    }
+
+    function startCountdown(duration) {
+      lockEndTime = Date.now() + duration * 1000;
+      const timer = document.getElementById("countdownTimer");
+      timer.classList.remove("hidden");
+      if (lockInterval) clearInterval(lockInterval);
+      lockInterval = setInterval(() => {
+        const remaining = Math.floor((lockEndTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+          timer.textContent = "Lock expired. You can unstake.";
+          clearInterval(lockInterval);
+        } else {
+          timer.textContent = `Locked for ${remaining}s`;
+        }
+      }, 1000);
+    }
+
+    document.getElementById("slider").addEventListener("input", () => {
+      const percent = document.getElementById("slider").value;
+      document.getElementById("percentLabel").textContent = percent + "%";
+      const val = (balance * percent / 100 / 1e18).toFixed(4);
+      document.getElementById("amount").value = val;
     });
 
-    await provider.send("eth_requestAccounts", []);
-    signer = provider.getSigner();
-    walletAddress = await signer.getAddress();
+    document.getElementById("amount").addEventListener("input", () => {
+      const val = parseFloat(document.getElementById("amount").value);
+      if (!val || balance === 0) {
+        document.getElementById("percentLabel").textContent = "0%";
+        document.getElementById("slider").value = 0;
+        return;
+      }
+      const percent = Math.min((val * 1e18 / balance) * 100, 100);
+      document.getElementById("slider").value = percent;
+      document.getElementById("percentLabel").textContent = percent.toFixed(0) + "%";
+    });
 
-    document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-    document.getElementById("walletStatus").textContent = "Connected";
-    document.getElementById("walletStatus").classList.remove("cursor-pointer");
-    document.getElementById("disconnectBtn").classList.remove("hidden");
-
-    balance = await provider.getBalance(walletAddress);
-    document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,8)} NEX`;
-
-    const txContract = new ethers.Contract(contractAddress, abi, provider);
-    const staked = await txContract.getStakedAmount(walletAddress);
-    const reward = await txContract.pendingReward(walletAddress);
-
-    document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
-    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
-
-    document.getElementById("stakeSection").classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-    alert("Gagal connect wallet");
-  }
-}
-
-function disconnectWallet() {
-  signer = null;
-  walletAddress = "";
-  document.getElementById("walletAddress").textContent = "-";
-  document.getElementById("walletBalance").textContent = "Balance: -";
-  document.getElementById("walletStatus").textContent = "Connect";
-  document.getElementById("walletStatus").classList.add("cursor-pointer");
-  document.getElementById("disconnectBtn").classList.add("hidden");
-  document.getElementById("stakeSection").classList.add("hidden");
-}
-
-async function confirmAction() {
-  const amount = document.getElementById("amount").value;
-  if (!amount || isNaN(amount)) return alert("Enter a valid amount");
-
-  const value = ethers.utils.parseEther(amount);
-  const txContract = contract.connect(signer);
-
-  if (mode === "stake") {
-    const tx = await txContract.stake({ value });
-    await tx.wait();
-    if (selectedDuration > 0) startCountdown(selectedDuration);
-  } else {
-    const tx = await txContract.unstake(value);
-    await tx.wait();
-  }
-
-  alert(`${mode} successful`);
-  window.location.reload();
-}
-
-function startCountdown(duration) {
-  const timer = document.getElementById("countdownTimer");
-  lockEndTime = Date.now() + duration * 1000;
-  timer.classList.remove("hidden");
-
-  if (lockInterval) clearInterval(lockInterval);
-  lockInterval = setInterval(() => {
-    const remaining = Math.floor((lockEndTime - Date.now()) / 1000);
-    if (remaining <= 0) {
-      timer.textContent = "Lock expired. You can unstake.";
-      clearInterval(lockInterval);
-    } else {
-      timer.textContent = `Locked for ${remaining}s`;
-    }
-  }, 1000);
-}
-
-document.getElementById("slider").addEventListener("input", () => {
-  const percent = document.getElementById("slider").value;
-  document.getElementById("percentLabel").textContent = percent + "%";
-  const val = (balance * percent / 100 / 1e18).toFixed(4);
-  document.getElementById("amount").value = val;
-});
-
-document.getElementById("amount").addEventListener("input", () => {
-  const val = parseFloat(document.getElementById("amount").value);
-  if (!val || balance === 0) {
-    document.getElementById("percentLabel").textContent = "0%";
-    document.getElementById("slider").value = 0;
-    return;
-  }
-  const percent = Math.min((val * 1e18 / balance) * 100, 100);
-  document.getElementById("slider").value = percent;
-  document.getElementById("percentLabel").textContent = percent.toFixed(0) + "%";
-});
-
-window.onload = () => {
-  document.getElementById("walletStatus").addEventListener("click", connectWallet);
-};
-</script>
+    window.onload = () => {
+      document.getElementById("walletStatus").addEventListener("click", connectWallet);
+    };
+  </script>
 </body>
 </html>
