@@ -157,7 +157,8 @@ const bird = {
   lift: -2.2
 };
 let score = 0, frame = 0, pipes = [], pipeGap = 170, pipeWidth = 60;
-
+let flapFrame = 0;
+  
 function drawBird() {
   if (landakImg.complete) {
     flapFrame++;
