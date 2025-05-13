@@ -6,125 +6,145 @@
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <style>
+    .dark-mode {
+      background-color: #111827;
+      color: white;
+    }
+    .dark-mode input, .dark-mode button {
+      background-color: #1f2937;
+      color: white;
+    }
+    .theme-toggle {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans">
+<body class="bg-gray-50 text-gray-900 font-sans relative" id="body">
+  <!-- Theme Toggle -->
+  <div class="theme-toggle" onclick="toggleTheme()">
+    <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-8.66h-1M4.34 12H3m15.07 4.93l-.71-.71M6.34 6.34l-.71-.71m12.02 12.02l-.71-.71M6.34 17.66l-.71-.71M12 5a7 7 0 100 14 7 7 0 000-14z"/>
+    </svg>
+  </div>
+
   <div class="max-w-md mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
-    <div class="bg-white shadow rounded-lg p-4 mb-6">
+    <div class="bg-white shadow rounded-lg p-4 mb-6 dark:bg-gray-800">
       <div class="flex justify-between text-sm">
         <div>
-          <p class="text-gray-500">Wallet</p>
+          <p class="text-gray-500 dark:text-gray-300">Wallet</p>
           <p id="walletAddress" class="font-mono">-</p>
-          <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
+          <p id="walletBalance" class="text-xs text-gray-500 mt-1">Balance: -</p>
         </div>
-        <div class="text-right">
+        <div class="flex flex-col items-end">
           <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
-          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-medium hidden">Disconnect</button>
+          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-medium hidden text-xs">Disconnect</button>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
-          <p class="text-gray-500">Total Staked</p>
+          <p class="text-gray-500 dark:text-gray-300">Total Staked</p>
           <p id="totalStaked" class="text-lg font-semibold">0.00 NEX</p>
         </div>
         <div>
-          <p class="text-gray-500">Pending Rewards</p>
+          <p class="text-gray-500 dark:text-gray-300">Pending Rewards</p>
           <p id="pendingRewards" class="text-lg font-semibold">0.00 NEX</p>
         </div>
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-4">
-      <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
+    <div class="bg-white shadow rounded-lg p-4 dark:bg-gray-800">
+      <label class="block text-sm text-gray-500 dark:text-gray-300 mb-1" for="amount">Amount</label>
       <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
       <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
 
       <div class="grid grid-cols-2 gap-4 mb-3">
-        <button id="stakeBtn" onclick="toggleAction('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
-        <button id="unstakeBtn" onclick="toggleAction('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
+        <button id="stakeBtn" onclick="setAction('stake')" class="bg-gray-900 text-white py-2 rounded active">Stake</button>
+        <button id="unstakeBtn" onclick="setAction('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
 
-      <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
+      <button onclick="submitAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
     </div>
 
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
-<script>
-  let provider, signer, walletAddress = "", walletBalance = 0;
+  <script>
+    let selectedAction = 'stake';
+    let walletAddress = null;
+    let provider, signer;
 
-  const slider = document.getElementById("slider");
-  const amountInput = document.getElementById("amount");
+    const slider = document.getElementById("slider");
+    const amountInput = document.getElementById("amount");
 
-  slider.addEventListener("input", () => {
-    const value = (walletBalance * parseFloat(slider.value) / 100).toFixed(2);
-    amountInput.value = value;
-  });
-
-  amountInput.addEventListener("input", () => {
-    const val = parseFloat(amountInput.value) || 0;
-    slider.value = Math.min(100, (val / walletBalance) * 100);
-  });
-
-  async function connectWallet() {
-    if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
-    await ethereum.request({
-      method: 'wallet_addEthereumChain',
-      params: [{
-        chainId: '0x189',
-        chainName: 'Nexus',
-        rpcUrls: ['https://rpc.nexus.xyz/http'],
-        nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
-        blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
-      }]
+    slider.addEventListener("input", () => {
+      amountInput.value = parseFloat(slider.value).toFixed(2);
     });
 
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = provider.getSigner();
-    walletAddress = await signer.getAddress();
-    const balance = await provider.getBalance(walletAddress);
-    walletBalance = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
+    amountInput.addEventListener("input", () => {
+      slider.value = Math.min(100, parseFloat(amountInput.value) || 0);
+    });
 
-    document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-    document.getElementById("walletBalance").textContent = "Balance: " + walletBalance + " NEX";
-    document.getElementById("connectBtn").classList.add("hidden");
-    document.getElementById("disconnectBtn").classList.remove("hidden");
-  }
+    async function connectWallet() {
+      if (!window.ethereum) return alert("Install OKX Wallet atau MetaMask dulu!");
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      walletAddress = await signer.getAddress();
+      document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+      document.getElementById("connectBtn").textContent = "Connected";
+      document.getElementById("connectBtn").disabled = true;
+      document.getElementById("disconnectBtn").classList.remove("hidden");
 
-  function disconnectWallet() {
-    walletAddress = "";
-    walletBalance = 0;
-    document.getElementById("walletAddress").textContent = "-";
-    document.getElementById("walletBalance").textContent = "Balance: -";
-    document.getElementById("connectBtn").classList.remove("hidden");
-    document.getElementById("disconnectBtn").classList.add("hidden");
-    document.getElementById("amount").value = "";
-    slider.value = 0;
-  }
+      const balance = await provider.getBalance(walletAddress);
+      const formatted = ethers.utils.formatEther(balance);
+      document.getElementById("walletBalance").textContent = `Balance: ${parseFloat(formatted).toFixed(2)} NEX`;
 
-  function toggleAction(action) {
-    const stakeBtn = document.getElementById("stakeBtn");
-    const unstakeBtn = document.getElementById("unstakeBtn");
-
-    if (action === "stake") {
-      stakeBtn.classList.replace("bg-gray-200", "bg-gray-900");
-      stakeBtn.classList.replace("text-gray-800", "text-white");
-      unstakeBtn.classList.replace("bg-gray-900", "bg-gray-200");
-      unstakeBtn.classList.replace("text-white", "text-gray-800");
-    } else {
-      unstakeBtn.classList.replace("bg-gray-200", "bg-gray-900");
-      unstakeBtn.classList.replace("text-gray-800", "text-white");
-      stakeBtn.classList.replace("bg-gray-900", "bg-gray-200");
-      stakeBtn.classList.replace("text-white", "text-gray-800");
+      slider.max = parseFloat(formatted);
     }
 
-    alert(`${action.charAt(0).toUpperCase() + action.slice(1)} action triggered`);
-  }
+    function disconnectWallet() {
+      walletAddress = null;
+      document.getElementById("walletAddress").textContent = "-";
+      document.getElementById("walletBalance").textContent = "Balance: -";
+      document.getElementById("connectBtn").textContent = "Connect";
+      document.getElementById("connectBtn").disabled = false;
+      document.getElementById("disconnectBtn").classList.add("hidden");
+    }
 
-  function claimReward() {
-    alert("Claim Reward executed");
-  }
-</script>
+    function setAction(action) {
+      selectedAction = action;
+      const stakeBtn = document.getElementById("stakeBtn");
+      const unstakeBtn = document.getElementById("unstakeBtn");
+
+      if (action === 'stake') {
+        stakeBtn.classList.remove("bg-gray-200", "text-gray-800");
+        stakeBtn.classList.add("bg-gray-900", "text-white");
+        unstakeBtn.classList.remove("bg-gray-900", "text-white");
+        unstakeBtn.classList.add("bg-gray-200", "text-gray-800");
+      } else {
+        unstakeBtn.classList.remove("bg-gray-200", "text-gray-800");
+        unstakeBtn.classList.add("bg-gray-900", "text-white");
+        stakeBtn.classList.remove("bg-gray-900", "text-white");
+        stakeBtn.classList.add("bg-gray-200", "text-gray-800");
+      }
+    }
+
+    function submitAction() {
+      const amount = amountInput.value;
+      if (!walletAddress) return alert("Connect wallet dulu!");
+      if (!amount || parseFloat(amount) <= 0) return alert("Masukkan jumlah yang valid");
+      alert(`${selectedAction.toUpperCase()} ${amount} NEX`);
+    }
+
+    function toggleTheme() {
+      const body = document.getElementById("body");
+      body.classList.toggle("dark-mode");
+    }
+  </script>
 </body>
 </html>
