@@ -285,14 +285,16 @@ const amountInput = document.getElementById("amount");
 const percentageText = document.getElementById("percentageText");
 
 slider.addEventListener("input", () => {
-  const val = (parseFloat(slider.value) / 100) * balance;
+  const base = mode === "stake" ? balance : totalStaked;
+  const val = (parseFloat(slider.value) / 100) * base;
   amountInput.value = val.toFixed(2);
   percentageText.textContent = `${slider.value}%`;
 });
 
 amountInput.addEventListener("input", () => {
-  const val = Math.min(balance, parseFloat(amountInput.value) || 0);
-  slider.value = ((val / balance) * 100).toFixed(0);
+  const base = mode === "stake" ? balance : totalStaked;
+  const val = Math.min(base, parseFloat(amountInput.value) || 0);
+  slider.value = ((val / base) * 100).toFixed(0);
   percentageText.textContent = `${slider.value}%`;
 });
 </script>
