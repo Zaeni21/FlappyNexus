@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,120 +8,113 @@
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
-    <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <div class="flex justify-between text-sm items-center">
-        <div>
-          <p class="text-gray-500">Wallet</p>
-          <p id="walletAddress" class="font-mono">-</p>
-          <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
-        </div>
-        <div>
-          <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
-          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-medium hidden ml-2">Disconnect</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-4 text-center mt-4">
-        <div>
-          <p class="text-gray-500">Total Staked</p>
-          <p id="totalStaked" class="text-lg font-semibold">0.00 NEX</p>
-        </div>
-        <div>
-          <p class="text-gray-500">Pending Rewards</p>
-          <p id="pendingRewards" class="text-lg font-semibold">0.00 NEX</p>
-        </div>
-      </div>
+    <h1 class="text-3xl font-bold mb-6">Stake NEX</h1><!-- Wallet Info Card -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-6">
+  <div class="flex justify-between items-center text-sm">
+    <div>
+      <p class="text-gray-500">Wallet</p>
+      <p id="walletAddress" class="font-mono">-</p>
     </div>
-
-    <div class="bg-white shadow rounded-lg p-4">
-      <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
-      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
-      <div class="grid grid-cols-2 gap-4 mb-3">
-        <button onclick="stake()" class="bg-gray-900 text-white py-2 rounded">Stake</button>
-        <button onclick="unstake()" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
-      </div>
-      <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
+    <div class="text-right">
+      <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-semibold">Connect</button>
+      <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-semibold hidden">Disconnect</button>
     </div>
+  </div>
+  <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
+</div>
 
-    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
+<!-- Staking Info -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-6 grid grid-cols-2 text-center">
+  <div>
+    <p class="text-gray-500 text-sm">Total Staked</p>
+    <p id="totalStaked" class="text-xl font-semibold">0.00 NEX</p>
+  </div>
+  <div>
+    <p class="text-gray-500 text-sm">Pending Rewards</p>
+    <p id="pendingRewards" class="text-xl font-semibold">0.00 NEX</p>
+  </div>
+</div>
+
+<!-- Action Form -->
+<div class="bg-white shadow-md rounded-lg p-4">
+  <label class="block text-sm text-gray-600 mb-1">Amount</label>
+  <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
+  <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
+
+  <div class="grid grid-cols-2 gap-4 mb-3">
+    <button onclick="stake()" class="bg-gray-900 text-white py-2 rounded">Stake</button>
+    <button onclick="unstake()" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
   </div>
 
-<script>
-let provider, signer, walletAddress = null, balance = 0;
+  <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
+</div>
 
-const amountInput = document.getElementById("amount");
-const slider = document.getElementById("slider");
-const connectBtn = document.getElementById("connectBtn");
-const disconnectBtn = document.getElementById("disconnectBtn");
+<p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
 
-slider.addEventListener("input", () => {
-  const value = (balance * parseFloat(slider.value) / 100).toFixed(2);
-  amountInput.value = value;
-});
+  </div>  <script>
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    let signer, walletAddress;
+    const connectBtn = document.getElementById("connectBtn");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+    const walletAddrText = document.getElementById("walletAddress");
+    const walletBalance = document.getElementById("walletBalance");
+    const slider = document.getElementById("slider");
+    const amountInput = document.getElementById("amount");
 
-amountInput.addEventListener("input", () => {
-  const inputVal = parseFloat(amountInput.value);
-  if (!isNaN(inputVal)) {
-    slider.value = Math.min(100, (inputVal / balance) * 100);
-  }
-});
+    async function connectWallet() {
+      if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
+      try {
+        await provider.send("wallet_addEthereumChain", [{
+          chainId: '0x189',
+          chainName: 'Nexus',
+          rpcUrls: ['https://rpc.nexus.xyz/http'],
+          nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
+          blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+        }]);
 
-async function connectWallet() {
-  if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        walletAddress = await signer.getAddress();
+        walletAddrText.textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
 
-  // Tambahin jaringan Nexus dulu
-  await window.ethereum.request({
-    method: 'wallet_addEthereumChain',
-    params: [{
-      chainId: '0x189', // 393 desimal
-      chainName: 'Nexus',
-      rpcUrls: ['https://rpc.nexus.xyz/http'],
-      nativeCurrency: {
-        name: 'NEX',
-        symbol: 'NEX',
-        decimals: 18
-      },
-      blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
-    }]
-  });
-  
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  walletAddress = await signer.getAddress();
+        const balance = await provider.getBalance(walletAddress);
+        const balanceInEth = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
+        walletBalance.textContent = `Balance: ${balanceInEth} NEX`;
+        slider.max = balanceInEth;
+        connectBtn.classList.add("hidden");
+        disconnectBtn.classList.remove("hidden");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to connect wallet");
+      }
+    }
 
-  document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-  connectBtn.classList.add("hidden"); // sembunyikan tombol Connect
-  disconnectBtn.classList.remove("hidden"); // tampilkan tombol Disconnect
+    function disconnectWallet() {
+      walletAddrText.textContent = "-";
+      walletBalance.textContent = "Balance: -";
+      connectBtn.classList.remove("hidden");
+      disconnectBtn.classList.add("hidden");
+      document.getElementById("amount").value = "";
+    }
 
-  balance = parseFloat(ethers.utils.formatEther(await provider.getBalance(walletAddress)));
-  document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
-}
+    slider.addEventListener("input", () => {
+      amountInput.value = parseFloat(slider.value).toFixed(2);
+    });
 
-function disconnectWallet() {
-  walletAddress = null;
-  signer = null;
-  connectBtn.classList.remove("hidden"); // tampilkan Connect lagi
-  disconnectBtn.classList.add("hidden"); // sembunyikan Disconnect
+    amountInput.addEventListener("input", () => {
+      slider.value = Math.min(parseFloat(slider.max), parseFloat(amountInput.value) || 0);
+    });
 
-  document.getElementById("walletAddress").textContent = "-";
-  document.getElementById("walletBalance").textContent = "Balance: -";
-  amountInput.value = "";
-  slider.value = 0;
-}
+    function stake() {
+      alert("Stake function executed");
+    }
 
-function stake() {
-  alert("Stake function executed");
-}
+    function unstake() {
+      alert("Unstake function executed");
+    }
 
-function unstake() {
-  alert("Unstake function executed");
-}
-
-function claimReward() {
-  alert("Claim Reward executed");
-}
-</script>
-</body>
+    function claimReward() {
+      alert("Claim Reward executed");
+    }
+  </script></body>
 </html>
