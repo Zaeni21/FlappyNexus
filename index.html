@@ -143,9 +143,9 @@ const abi = [
 ];
 
 const landakImg = new Image();
-landakImg.src = "https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4";
+landakImg.src = "https://gateway.pinata.cloud/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4";
 const bambooImg = new Image();
-bambooImg.src = "https://ipfs.io/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
+bambooImg.src = "https://gateway.pinata.cloud/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
 
 const bird = { x: 80, y: canvas.height / 2, width: 50, height: 50, velocity: 0, gravity: 0.06, lift: -2.2 };
 let score = 0, frame = 0, pipes = [], pipeGap = 170, pipeWidth = 60;
@@ -158,21 +158,6 @@ function drawPipes() {
     if (bambooImg.complete) {
       ctx.drawImage(bambooImg, p.x, 0, pipeWidth, p.top);
       ctx.drawImage(bambooImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
-    }
-  });
-}
-function drawPipes() {
-  pipes.forEach(p => {
-    if (buildingImg.complete) {
-      // Gambar gedung atas (dibalik)
-      ctx.save();
-      ctx.translate(p.x + pipeWidth / 2, p.top);
-      ctx.scale(1, -1);
-      ctx.drawImage(buildingImg, -pipeWidth / 2, 0, pipeWidth, p.top);
-      ctx.restore();
-
-      // Gambar gedung bawah (normal)
-      ctx.drawImage(buildingImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
     }
   });
 }
