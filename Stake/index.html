@@ -5,21 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
+
     <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <div class="flex justify-between text-sm">
+      <div class="flex justify-between text-sm items-center">
         <div>
           <p class="text-gray-500">Wallet</p>
           <p id="walletAddress" class="font-mono">-</p>
           <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
         </div>
-        <button onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
         <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
       </div>
+
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
           <p class="text-gray-500">Total Staked</p>
@@ -34,7 +35,7 @@
 
     <div class="bg-white shadow rounded-lg p-4">
       <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3" />
+      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
       <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
 
       <div class="grid grid-cols-2 gap-4 mb-3">
@@ -75,20 +76,21 @@
       });
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  const signer = provider.getSigner();
-  const address = await signer.getAddress();
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
 
-  document.getElementById("walletAddress").textContent = address.slice(0, 6) + "..." + address.slice(-4);
+      document.getElementById("walletAddress").textContent = address.slice(0, 6) + "..." + address.slice(-4);
 
-  const balance = await provider.getBalance(address);
-  const formatted = ethers.utils.formatEther(balance);
-  document.getElementById("walletBalance").textContent = `Balance: ${parseFloat(formatted).toFixed(2)} NEX`;
-}
-document.getElementById("connectBtn").textContent = "Connected";
-  document.getElementById("connectBtn").disabled = true; // Optional: disable tombol setelah connect
+      const balance = await provider.getBalance(address);
+      const formatted = ethers.utils.formatEther(balance);
+      document.getElementById("walletBalance").textContent = `Balance: ${parseFloat(formatted).toFixed(2)} NEX`;
+
+      // Ubah tombol
+      document.getElementById("connectBtn").textContent = "Connected";
+      document.getElementById("connectBtn").disabled = true;
     }
-    
+
     function stake() {
       alert("Stake function executed");
     }
