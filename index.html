@@ -144,32 +144,46 @@ const abi = [
 
 const landakImg = new Image();
 landakImg.src = "https://gateway.pinata.cloud/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4";
-const bambooImg = new Image();
-bambooImg.src = "https://gateway.pinata.cloud/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
-
-const bird = { x: 80, y: canvas.height / 2, width: 50, height: 50, velocity: 0, gravity: 0.06, lift: -2.2 };
+const buildingImg = new Image();
+buildingImg.src = "https://ipfs.io/ipfs/bafybeifv7yt4fu55x7gcqxp6syzmvbuvzjrw3ftci4d3zulgehn22pkee4";
+  
+const bird = {
+  x: 80,
+  y: canvas.height / 2,
+  width: 48,
+  height: 72, // tingginya lebih besar dari lebar biar proporsional
+  velocity: 0,
+  gravity: 0.06,
+  lift: -2.2
+};
 let score = 0, frame = 0, pipes = [], pipeGap = 170, pipeWidth = 60;
 
 function drawBird() {
-  if (landakImg.complete) ctx.drawImage(landakImg, bird.x, bird.y, bird.width, bird.height);
+  if (landakImg.complete) {
+    flapFrame++;
+    const floatY = bird.y + Math.sin(flapFrame * 0.2) * 2; // efek naik turun
+
+    ctx.save();
+    ctx.translate(bird.x + bird.width / 2, floatY + bird.height / 2);
+    ctx.rotate(bird.velocity * 0.1);
+    ctx.drawImage(landakImg, -bird.width / 2, -bird.height / 2, bird.width, bird.height);
+    ctx.restore();
+  }
 }
 function drawPipes() {
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.4)";
-  ctx.shadowBlur = 8;
-  ctx.shadowOffsetX = 4;
-  ctx.shadowOffsetY = 4;
-
-  ctx.filter = "blur(0.5px)"; // tambahin efek blur dikit
-
   pipes.forEach(p => {
-    if (bambooImg.complete) {
-      ctx.drawImage(bambooImg, p.x, 0, pipeWidth, p.top);
-      ctx.drawImage(bambooImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+    if (buildingImg.complete) {
+      // Gambar gedung atas (dibalik)
+      ctx.save();
+      ctx.translate(p.x + pipeWidth / 2, p.top);
+      ctx.scale(1, -1);
+      ctx.drawImage(buildingImg, -pipeWidth / 2, 0, pipeWidth, p.top);
+      ctx.restore();
+
+      // Gambar gedung bawah (normal)
+      ctx.drawImage(buildingImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
     }
   });
-
-  ctx.restore(); // balikin context ke normal
 }
 function update() {
   if (gameOver) return;
@@ -203,21 +217,8 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBird();
   drawPipes();
+  requestAnimationFrame(update);
 }
-let lastFrameTime = 0;
-const targetFPS = 60;
-const frameDuration = 1000 / targetFPS;
-
-function gameLoop(timestamp) {
-  if (timestamp - lastFrameTime >= frameDuration) {
-    update();
-    lastFrameTime = timestamp;
-  }
-  requestAnimationFrame(gameLoop);
-}
-
-requestAnimationFrame(gameLoop);
-  
 function showGameOver(score) {
   if (gameOver) return;
   gameOver = true;
