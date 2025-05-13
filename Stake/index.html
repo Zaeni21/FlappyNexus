@@ -76,9 +76,8 @@ async function connectWallet() {
   walletAddress = await signer.getAddress();
 
   document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-  connectBtn.textContent = "Connected";
-  connectBtn.classList.add("text-green-600");
-  disconnectBtn.classList.remove("hidden");
+  connectBtn.classList.add("hidden"); // sembunyikan tombol Connect
+  disconnectBtn.classList.remove("hidden"); // tampilkan tombol Disconnect
 
   balance = parseFloat(ethers.utils.formatEther(await provider.getBalance(walletAddress)));
   document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
@@ -87,9 +86,8 @@ async function connectWallet() {
 function disconnectWallet() {
   walletAddress = null;
   signer = null;
-  connectBtn.textContent = "Connect";
-  connectBtn.classList.remove("text-green-600");
-  disconnectBtn.classList.add("hidden");
+  connectBtn.classList.remove("hidden"); // tampilkan Connect lagi
+  disconnectBtn.classList.add("hidden"); // sembunyikan Disconnect
 
   document.getElementById("walletAddress").textContent = "-";
   document.getElementById("walletBalance").textContent = "Balance: -";
