@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stake NEX</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+  <div class="container mx-auto px-4 py-10">
+    <h1 class="text-4xl font-extrabold mb-8 text-center">Stake NEX Token</h1><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+  <div class="bg-gray-800 p-6 rounded-xl shadow">
+    <p class="text-gray-400 text-sm">Total Staked</p>
+    <p class="text-2xl font-bold mt-2" id="totalStaked">-</p>
+  </div>
+  <div class="bg-gray-800 p-6 rounded-xl shadow">
+    <p class="text-gray-400 text-sm">Your Stake</p>
+    <p class="text-2xl font-bold mt-2" id="yourStake">-</p>
+  </div>
+  <div class="bg-gray-800 p-6 rounded-xl shadow">
+    <p class="text-gray-400 text-sm">Pending Reward</p>
+    <p class="text-2xl font-bold mt-2" id="reward">-</p>
+  </div>
+</div>
+
+<div class="bg-gray-800 p-8 rounded-xl shadow max-w-xl mx-auto">
+  <div class="mb-4">
+    <label for="amount" class="block text-sm mb-2">Amount to Stake</label>
+    <input type="number" id="amount" class="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600" placeholder="0.0">
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 mt-6">
+    <button onclick="stake()" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold w-full">Stake</button>
+    <button onclick="unstake()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded font-bold w-full">Unstake</button>
+  </div>
+  <button onclick="claimReward()" class="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded font-bold">Claim Reward</button>
+</div>
+
+  </div>  <script>
+    async function stake() {
+      const amount = document.getElementById("amount").value;
+      alert(`Stake ${amount} NEX (belum terhubung ke smart contract)`);
+    }
+
+    async function unstake() {
+      alert("Unstake clicked (belum terhubung ke smart contract)");
+    }
+
+    async function claimReward() {
+      alert("Claim reward clicked (belum terhubung ke smart contract)");
+    }
+  </script></body>
+</html>
