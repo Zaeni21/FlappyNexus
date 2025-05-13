@@ -6,7 +6,6 @@
   <title>Flappy Nexus</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  
   <style>
   .stars {
     position: fixed;
@@ -24,19 +23,18 @@
   }
 </style>
   <style>
-  .forest-bg {
-    background: url('https://cdn.pixabay.com/photo/2016/03/26/13/09/forest-1280x720.jpg') no-repeat center center fixed;
-    background-size: cover;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    display: none;
+  @keyframes fly {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+  }
+
+  #hero-image {
+    animation: fly 2s ease-in-out infinite;
   }
 </style>
 </head>
 <body class="bg-black text-white min-h-screen font-sans relative overflow-hidden">
-<div id="forest-bg" class="forest-bg"></div>
 <div id="star-bg" class="stars absolute inset-0 z-0"></div>
 <canvas id="starfield" class="fixed top-0 left-0 w-full h-full z-1"></canvas>
   
@@ -146,20 +144,44 @@ const abi = [
 
 const landakImg = new Image();
 landakImg.src = "https://gateway.pinata.cloud/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4";
-const bambooImg = new Image();
-bambooImg.src = "https://gateway.pinata.cloud/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
-
-const bird = { x: 80, y: canvas.height / 2, width: 50, height: 50, velocity: 0, gravity: 0.06, lift: -2.2 };
+const buildingImg = new Image();
+buildingImg.src = "https://ipfs.io/ipfs/bafybeifv7yt4fu55x7gcqxp6syzmvbuvzjrw3ftci4d3zulgehn22pkee4";
+  
+const bird = {
+  x: 80,
+  y: canvas.height / 2,
+  width: 48,
+  height: 72, // tingginya lebih besar dari lebar biar proporsional
+  velocity: 0,
+  gravity: 0.06,
+  lift: -2.2
+};
 let score = 0, frame = 0, pipes = [], pipeGap = 170, pipeWidth = 60;
 
 function drawBird() {
-  if (landakImg.complete) ctx.drawImage(landakImg, bird.x, bird.y, bird.width, bird.height);
+  if (landakImg.complete) {
+    flapFrame++;
+    const floatY = bird.y + Math.sin(flapFrame * 0.2) * 2; // efek naik turun
+
+    ctx.save();
+    ctx.translate(bird.x + bird.width / 2, floatY + bird.height / 2);
+    ctx.rotate(bird.velocity * 0.1);
+    ctx.drawImage(landakImg, -bird.width / 2, -bird.height / 2, bird.width, bird.height);
+    ctx.restore();
+  }
 }
 function drawPipes() {
   pipes.forEach(p => {
-    if (bambooImg.complete) {
-      ctx.drawImage(bambooImg, p.x, 0, pipeWidth, p.top);
-      ctx.drawImage(bambooImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+    if (buildingImg.complete) {
+      // Gambar gedung atas (dibalik)
+      ctx.save();
+      ctx.translate(p.x + pipeWidth / 2, p.top);
+      ctx.scale(1, -1);
+      ctx.drawImage(buildingImg, -pipeWidth / 2, 0, pipeWidth, p.top);
+      ctx.restore();
+
+      // Gambar gedung bawah (normal)
+      ctx.drawImage(buildingImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
     }
   });
 }
@@ -261,8 +283,7 @@ function showGameOver(score) {
   const overlay = document.getElementById("gameOverOverlay");
   if (overlay) overlay.remove();
 
-  document.getElementById("score").innerText = "Score: 0";
-    document.getElementById("forest-bg").style.display = "block";
+  document.getElementById("score").innerText = "Score: 0";    
 document.getElementById("bg-music").play().catch(e => {
   console.warn("Audio resume blocked:", e);
 });
@@ -270,9 +291,8 @@ document.getElementById("bg-music").play().catch(e => {
 }
 function startOffchain() {
   onchain = false;
-  document.getElementById("forest-bg").style.display = "block";
-document.getElementById("star-bg").style.display = "none";
-  document.getElementById("forest-bg").style.display = "block";
+  document.getElementById("star-bg").style.display = "none";
+  document.getElementById("starfield").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
   document.getElementById("hero-image").style.display = "none";
   document.getElementById("social-footer").style.display = "none";
@@ -286,7 +306,6 @@ document.getElementById("star-bg").style.display = "none";
     alert("Connect wallet dulu bro!");
     return;
   }
-    document.getElementById("forest-bg").style.display = "block";
     document.getElementById("star-bg").style.display = "none";
     document.getElementById("starfield").style.display = "none";
   document.getElementById("mode-selection").style.display = "none";
