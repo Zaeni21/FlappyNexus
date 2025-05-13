@@ -15,8 +15,10 @@
         <div>
           <p class="text-gray-500">Wallet</p>
           <p id="walletAddress" class="font-mono">-</p>
+          <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
         </div>
         <button onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
+        <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
       </div>
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
@@ -73,12 +75,20 @@
       });
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
-      document.getElementById("walletAddress").textContent = address.slice(0, 6) + "..." + address.slice(-4);
-    }
+  await provider.send("eth_requestAccounts", []);
+  const signer = provider.getSigner();
+  const address = await signer.getAddress();
 
+  document.getElementById("walletAddress").textContent = address.slice(0, 6) + "..." + address.slice(-4);
+
+  const balance = await provider.getBalance(address);
+  const formatted = ethers.utils.formatEther(balance);
+  document.getElementById("walletBalance").textContent = `Balance: ${parseFloat(formatted).toFixed(2)} NEX`;
+}
+document.getElementById("connectBtn").textContent = "Connected";
+  document.getElementById("connectBtn").disabled = true; // Optional: disable tombol setelah connect
+    }
+    
     function stake() {
       alert("Stake function executed");
     }
