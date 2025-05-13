@@ -57,47 +57,28 @@
         <button onclick="selectMode('unstake')" id="unstakeBtn" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
 
-      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
+      <!-- Confirm Button -->
+<button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
+</div> <!-- Ini nutup div id="stakeSection" -->
 
-    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
-  </div>
+<!-- Footer -->
+<p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
+</div>
 
-<script>
+  <script>
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, walletAddress = "", mode = "stake", balance = 0;
 let lockEndTime = null, lockInterval = null;
 let selectedDuration = 0;
 
+const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
+const abi = [ /* ABI kamu di sini */ ];
+const contract = new ethers.Contract(contractAddress, abi, provider);
+
 function setDuration(seconds) {
   selectedDuration = seconds;
-  startCountdown(seconds); // Langsung mulai countdown
+  startCountdown(seconds);
 }
-
-const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-const abi = [ { "inputs":[],"stateMutability":"nonpayable","type":"constructor" },
-{ "inputs":[],"name":"claimReward","outputs":[],"stateMutability":"nonpayable","type":"function" },
-{ "inputs":[],"name":"depositReward","outputs":[],"stateMutability":"payable","type":"function" },
-{ "inputs":[{ "internalType":"address","name":"user","type":"address" }],
-"name":"getStakedAmount","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
-"stateMutability":"view","type":"function" },
-{ "inputs":[],"name":"owner","outputs":[{ "internalType":"address","name":"","type":"address" }],
-"stateMutability":"view","type":"function" },
-{ "inputs":[{ "internalType":"address","name":"user","type":"address" }],
-"name":"pendingReward","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
-"stateMutability":"view","type":"function" },
-{ "inputs":[],"name":"stake","outputs":[],"stateMutability":"payable","type":"function" },
-{ "inputs":[{ "internalType":"address","name":"","type":"address" }],
-"name":"stakers","outputs":[{ "internalType":"uint256","name":"amount","type":"uint256" },
-{ "internalType":"uint256","name":"rewardDebt","type":"uint256" }],
-"stateMutability":"view","type":"function" },
-{ "inputs":[],"name":"totalStaked","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
-"stateMutability":"view","type":"function" },
-{ "inputs":[{ "internalType":"uint256","name":"amount","type":"uint256" }],
-"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function" },
-{ "stateMutability":"payable","type":"receive" }
-];
-
-const contract = new ethers.Contract(contractAddress, abi, provider);
 
 function selectMode(m) {
   mode = m;
@@ -167,7 +148,6 @@ function disconnectWallet() {
 }
 
 async function confirmAction() {
-async function confirmAction() {
   const amount = document.getElementById("amount").value;
   if (!amount || isNaN(amount)) return alert("Enter a valid amount");
 
@@ -189,7 +169,7 @@ async function confirmAction() {
 
 function startCountdown(duration) {
   const timer = document.getElementById("countdownTimer");
-  const lockEndTime = Date.now() + duration * 1000;
+  lockEndTime = Date.now() + duration * 1000;
   timer.classList.remove("hidden");
 
   if (lockInterval) clearInterval(lockInterval);
