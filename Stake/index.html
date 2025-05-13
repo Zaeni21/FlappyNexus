@@ -1,63 +1,80 @@
-<!DOCTYPE html>
+id=""<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stake NEX</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stake NEX</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js">
+let lockEndTime = null;
+let lockInterval = null;
+
+function startCountdown(duration) {
+  lockEndTime = Date.now() + duration * 1000;
+  document.getElementById("countdownTimer").classList.remove("hidden");
+
+  if (lockInterval) clearInterval(lockInterval);
+  lockInterval = setInterval(() => {
+    const remaining = Math.floor((lockEndTime - Date.now()) / 1000);
+    if (remaining <= 0) {
+      document.getElementById("countdownTimer").textContent = "Lock expired. You can unstake.";
+      clearInterval(lockInterval);
+    } else {
+      document.getElementById("countdownTimer").textContent = `Locked for ${remaining}s`;
+    }
+  }, 1000);
+}
+    </script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
+<div class="max-w-md mx-auto p-6">
+<div class="flex justify-between items-center mb-4">
+<h1 class="text-3xl font-bold">Stake NEX</h1>
+<div class="flex space-x-4">
+<span class="text-blue-600 font-semibold hidden" id="walletStatus">Connected</span>
+<button class="text-red-600 font-semibold hidden" id="disconnectBtn" onclick="disconnectWallet()">Disconnect</button>
+</div>
+</div>
+<div class="bg-white shadow rounded-lg p-4 mb-6">
+<div class="text-sm">
+<p class="text-gray-500">Wallet</p>
+<p class="font-mono text-sm mb-1" id="walletAddress">-</p>
+<p class="text-sm text-gray-500" id="walletBalance">Balance: -</p>
+</div>
+<div class="grid grid-cols-2 gap-4 text-center mt-4">
+<div>
+<p class="text-gray-500">Total Staked</p>
+<p class="text-lg font-semibold" id="totalStaked">0.00 NEX</p>
+</div>
+<div>
+<p class="text-gray-500">Pending Rewards</p>
+<p class="text-lg font-semibold" id="pendingRewards">0.00 NEX</p>
+</div>
+</div>
+</div>
+<div class="bg-white shadow rounded-lg p-4 hidden" id="stakeSection">
+<label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
+<input class="w-full p-2 border rounded mb-3" id="amount" placeholder="0.0" type="number"/>
+<div class="flex justify-between text-xs text-gray-500">
+<span></span>
+<span id="percentLabel">0%</span>
+</div>
+<input class="w-full mb-4" id="slider" max="100" min="0" type="range" value="0"/>
+<div class="grid grid-cols-2 gap-4 mb-3">
+<button class="bg-gray-900 text-white py-2 rounded" id="stakeBtn" onclick="selectMode('stake')">Stake</button>
+<button class="bg-gray-200 text-gray-800 py-2 rounded" id="unstakeBtn" onclick="selectMode('unstake')">Unstake</button>
+</div>
+<button class="w-full bg-blue-600 text-white py-2 rounded" onclick="confirmAction()">Confirm</button>
 
-  <div class="max-w-md mx-auto p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-3xl font-bold">Stake NEX</h1>
-      <div class="flex space-x-4">
-        <span id="walletStatus" class="text-blue-600 font-semibold hidden">Connected</span>
-        <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-600 font-semibold hidden">Disconnect</button>
-      </div>
-    </div>
-
-    <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <div class="text-sm">
-        <p class="text-gray-500">Wallet</p>
-        <p id="walletAddress" class="font-mono text-sm mb-1">-</p>
-        <p id="walletBalance" class="text-sm text-gray-500">Balance: -</p>
-      </div>
-      <div class="grid grid-cols-2 gap-4 text-center mt-4">
-        <div>
-          <p class="text-gray-500">Total Staked</p>
-          <p id="totalStaked" class="text-lg font-semibold">0.00 NEX</p>
-        </div>
-        <div>
-          <p class="text-gray-500">Pending Rewards</p>
-          <p id="pendingRewards" class="text-lg font-semibold">0.00 NEX</p>
-        </div>
-      </div>
-    </div>
-
-    <div id="stakeSection" class="bg-white shadow rounded-lg p-4 hidden">
-      <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
-      <div class="flex justify-between text-xs text-gray-500">
-        <span></span>
-        <span id="percentLabel">0%</span>
-      </div>
-      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
-
-      <div class="grid grid-cols-2 gap-4 mb-3">
-        <button id="stakeBtn" onclick="selectMode('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
-        <button id="unstakeBtn" onclick="selectMode('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
-      </div>
-
-      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
-    </div>
-
-    <div class="text-center text-xs text-gray-400 mt-6">
+<label class="block text-sm text-gray-500 mb-1">Lock Duration (in seconds)</label>
+<input class="w-full p-2 border rounded mb-4" id="lockDuration" placeholder="e.g. 60" type="number"/>
+<div class="text-xs text-red-600 font-mono text-center hidden mb-2" id="countdownTimer"></div>
+</div>
+<div class="text-center text-xs text-gray-400 mt-6">
       Built by JAWIRNFT with love for degen culture
     </div>
-  </div>
-
+</div>
 <script>
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer;
