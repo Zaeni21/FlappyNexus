@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -10,7 +10,6 @@
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
-
     <div class="bg-white shadow rounded-lg p-4 mb-6">
       <div class="flex justify-between text-sm items-center">
         <div>
@@ -18,9 +17,11 @@
           <p id="walletAddress" class="font-mono">-</p>
           <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
         </div>
-        <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
+        <div>
+          <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
+          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-medium hidden ml-2">Disconnect</button>
+        </div>
       </div>
-
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
           <p class="text-gray-500">Total Staked</p>
@@ -37,71 +38,76 @@
       <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
       <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3">
       <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
-
       <div class="grid grid-cols-2 gap-4 mb-3">
         <button onclick="stake()" class="bg-gray-900 text-white py-2 rounded">Stake</button>
         <button onclick="unstake()" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
-
       <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
     </div>
 
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
-  <script>
-    const slider = document.getElementById("slider");
-    const amountInput = document.getElementById("amount");
+<script>
+let provider, signer, walletAddress = null, balance = 0;
 
-    slider.addEventListener("input", () => {
-      amountInput.value = parseFloat(slider.value).toFixed(2);
-    });
+const amountInput = document.getElementById("amount");
+const slider = document.getElementById("slider");
+const connectBtn = document.getElementById("connectBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
 
-    amountInput.addEventListener("input", () => {
-      slider.value = Math.min(100, parseFloat(amountInput.value) || 0);
-    });
+slider.addEventListener("input", () => {
+  const value = (balance * parseFloat(slider.value) / 100).toFixed(2);
+  amountInput.value = value;
+});
 
-    async function connectWallet() {
-      if (!window.ethereum) return alert("Install MetaMask or OKX Wallet bro!");
+amountInput.addEventListener("input", () => {
+  const inputVal = parseFloat(amountInput.value);
+  if (!isNaN(inputVal)) {
+    slider.value = Math.min(100, (inputVal / balance) * 100);
+  }
+});
 
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: "0x189",
-          chainName: "Nexus",
-          nativeCurrency: { name: "NEX", symbol: "NEX", decimals: 18 },
-          rpcUrls: ["https://rpc.nexus.xyz/http"],
-          blockExplorerUrls: ["https://nexus-new.explorer.caldera.xyz"]
-        }]
-      });
+async function connectWallet() {
+  if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  walletAddress = await signer.getAddress();
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
+  document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+  connectBtn.textContent = "Connected";
+  connectBtn.classList.add("text-green-600");
+  disconnectBtn.classList.remove("hidden");
 
-      document.getElementById("walletAddress").textContent = address.slice(0, 6) + "..." + address.slice(-4);
+  balance = parseFloat(ethers.utils.formatEther(await provider.getBalance(walletAddress)));
+  document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+}
 
-      const balance = await provider.getBalance(address);
-      const formatted = ethers.utils.formatEther(balance);
-      document.getElementById("walletBalance").textContent = `Balance: ${parseFloat(formatted).toFixed(2)} NEX`;
+function disconnectWallet() {
+  walletAddress = null;
+  signer = null;
+  connectBtn.textContent = "Connect";
+  connectBtn.classList.remove("text-green-600");
+  disconnectBtn.classList.add("hidden");
 
-      // Ubah tombol
-      document.getElementById("connectBtn").textContent = "Connected";
-      document.getElementById("connectBtn").disabled = true;
-    }
+  document.getElementById("walletAddress").textContent = "-";
+  document.getElementById("walletBalance").textContent = "Balance: -";
+  amountInput.value = "";
+  slider.value = 0;
+}
 
-    function stake() {
-      alert("Stake function executed");
-    }
+function stake() {
+  alert("Stake function executed");
+}
 
-    function unstake() {
-      alert("Unstake function executed");
-    }
+function unstake() {
+  alert("Unstake function executed");
+}
 
-    function claimReward() {
-      alert("Claim Reward executed");
-    }
-  </script>
+function claimReward() {
+  alert("Claim Reward executed");
+}
+</script>
 </body>
 </html>
