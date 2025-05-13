@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
-
+    
     <div class="bg-white shadow rounded-lg p-4 mb-6">
       <div class="flex justify-between text-sm items-center">
         <div>
@@ -18,9 +18,9 @@
           <p id="walletAddress" class="font-mono">-</p>
           <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
         </div>
-        <div class="space-x-2">
+        <div class="flex gap-2">
           <button id="connectBtn" onclick="connectWallet()" class="text-blue-600 font-medium">Connect</button>
-          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-500 font-medium hidden">Disconnect</button>
+          <button id="disconnectBtn" onclick="disconnectWallet()" class="text-red-600 font-medium hidden">Disconnect</button>
         </div>
       </div>
 
@@ -42,8 +42,8 @@
       <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-4">
 
       <div class="grid grid-cols-2 gap-4 mb-3">
-        <button id="stakeBtn" onclick="selectMode('stake')" class="py-2 rounded bg-gray-900 text-white">Stake</button>
-        <button id="unstakeBtn" onclick="selectMode('unstake')" class="py-2 rounded bg-gray-200 text-gray-800">Unstake</button>
+        <button id="stakeBtn" onclick="setMode('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
+        <button id="unstakeBtn" onclick="setMode('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
 
       <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
@@ -52,78 +52,75 @@
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
-  <script>
-    const slider = document.getElementById("slider");
-    const amountInput = document.getElementById("amount");
-    const stakeBtn = document.getElementById("stakeBtn");
-    const unstakeBtn = document.getElementById("unstakeBtn");
-    let currentMode = 'stake';
-    let walletAddress = null;
-    let walletBalance = 0;
+<script>
+  const slider = document.getElementById("slider");
+  const amountInput = document.getElementById("amount");
+  const connectBtn = document.getElementById("connectBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  let provider, signer, walletAddress = "";
+  let mode = "stake";
+  let balance = 0;
 
-    slider.addEventListener("input", () => {
-      const percent = parseFloat(slider.value) / 100;
-      const value = (walletBalance * percent).toFixed(2);
-      amountInput.value = value;
-    });
+  slider.addEventListener("input", () => {
+    const val = (parseFloat(slider.value) / 100) * balance;
+    amountInput.value = val.toFixed(2);
+  });
 
-    amountInput.addEventListener("input", () => {
-      const val = parseFloat(amountInput.value);
-      const percent = Math.min(100, ((val || 0) / walletBalance) * 100);
-      slider.value = percent;
-    });
+  amountInput.addEventListener("input", () => {
+    const val = Math.min(balance, parseFloat(amountInput.value) || 0);
+    slider.value = ((val / balance) * 100).toFixed(0);
+  });
 
-    function selectMode(mode) {
-      currentMode = mode;
-      if (mode === 'stake') {
-        stakeBtn.classList.replace("bg-gray-200", "bg-gray-900");
-        stakeBtn.classList.replace("text-gray-800", "text-white");
-        unstakeBtn.classList.replace("bg-gray-900", "bg-gray-200");
-        unstakeBtn.classList.replace("text-white", "text-gray-800");
-      } else {
-        unstakeBtn.classList.replace("bg-gray-200", "bg-gray-900");
-        unstakeBtn.classList.replace("text-gray-800", "text-white");
-        stakeBtn.classList.replace("bg-gray-900", "bg-gray-200");
-        stakeBtn.classList.replace("text-white", "text-gray-800");
-      }
+  async function connectWallet() {
+    if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
+
+    const balanceRaw = await provider.getBalance(walletAddress);
+    balance = parseFloat(ethers.utils.formatEther(balanceRaw));
+    document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+    document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+
+    connectBtn.classList.add("hidden");
+    disconnectBtn.classList.remove("hidden");
+  }
+
+  function disconnectWallet() {
+    walletAddress = "";
+    document.getElementById("walletAddress").textContent = "-";
+    document.getElementById("walletBalance").textContent = "Balance: -";
+    connectBtn.classList.remove("hidden");
+    disconnectBtn.classList.add("hidden");
+    amountInput.value = "";
+    slider.value = 0;
+  }
+
+  function setMode(selected) {
+    mode = selected;
+    if (mode === "stake") {
+      document.getElementById("stakeBtn").classList.add("bg-gray-900", "text-white");
+      document.getElementById("stakeBtn").classList.remove("bg-gray-200", "text-gray-800");
+
+      document.getElementById("unstakeBtn").classList.remove("bg-gray-900", "text-white");
+      document.getElementById("unstakeBtn").classList.add("bg-gray-200", "text-gray-800");
+    } else {
+      document.getElementById("unstakeBtn").classList.add("bg-gray-900", "text-white");
+      document.getElementById("unstakeBtn").classList.remove("bg-gray-200", "text-gray-800");
+
+      document.getElementById("stakeBtn").classList.remove("bg-gray-900", "text-white");
+      document.getElementById("stakeBtn").classList.add("bg-gray-200", "text-gray-800");
     }
+  }
 
-    async function connectWallet() {
-      if (!window.ethereum) return alert("Install MetaMask or OKX Wallet");
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      walletAddress = await signer.getAddress();
-      document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-      document.getElementById("connectBtn").textContent = "Connected";
-      document.getElementById("connectBtn").classList.add("text-gray-400");
-      document.getElementById("connectBtn").classList.remove("text-blue-600");
-      document.getElementById("disconnectBtn").classList.remove("hidden");
-
-      const balance = await provider.getBalance(walletAddress);
-      walletBalance = parseFloat(ethers.utils.formatEther(balance));
-      document.getElementById("walletBalance").textContent = "Balance: " + walletBalance.toFixed(2) + " NEX";
+  function confirmAction() {
+    if (mode === "stake") {
+      alert(`Stake ${amountInput.value} NEX`);
+    } else {
+      alert(`Unstake ${amountInput.value} NEX`);
     }
-
-    function disconnectWallet() {
-      walletAddress = null;
-      walletBalance = 0;
-      document.getElementById("walletAddress").textContent = "-";
-      document.getElementById("walletBalance").textContent = "Balance: -";
-      document.getElementById("connectBtn").textContent = "Connect";
-      document.getElementById("connectBtn").classList.remove("text-gray-400");
-      document.getElementById("connectBtn").classList.add("text-blue-600");
-      document.getElementById("disconnectBtn").classList.add("hidden");
-      amountInput.value = "";
-      slider.value = 0;
-    }
-
-    function confirmAction() {
-      const amount = parseFloat(amountInput.value || 0);
-      if (!walletAddress) return alert("Please connect your wallet.");
-      if (amount <= 0) return alert("Enter a valid amount.");
-      alert((currentMode === 'stake' ? "Staking" : "Unstaking") + " " + amount + " NEX...");
-    }
-  </script>
+  }
+</script>
 </body>
 </html>
