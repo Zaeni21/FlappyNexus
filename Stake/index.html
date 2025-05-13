@@ -36,17 +36,17 @@
     </div>
 
     <div id="stakeSection" class="bg-white shadow rounded-lg p-4 hidden">
-      <label class="block text-sm text-gray-500 mt-4 mb-1">Lock Duration</label>
-<select id="lockDuration" class="w-full p-2 border rounded mb-3">
-  <option value="0">No Lock</option>
-  <option value="86400">1 Day</option>
-  <option value="604800">1 Week</option>
-  <option value="1209600">2 Weeks</option>
-  <option value="2592000">1 Month</option>
-  <option value="7776000">3 Months</option>
-  <option value="15552000">6 Months</option>
-  <option value="31536000">1 Year</option>
-</select>
+      <!-- Durasi pilihan -->
+<label class="block text-sm text-gray-500 mt-4 mb-1">Lock Duration</label>
+<div class="grid grid-cols-3 gap-2 text-sm mb-3">
+  <button onclick="setDuration(1209600)" class="bg-gray-200 py-1 rounded">2W</button>
+  <button onclick="setDuration(2592000)" class="bg-gray-200 py-1 rounded">1M</button>
+  <button onclick="setDuration(15552000)" class="bg-gray-200 py-1 rounded">6M</button>
+  <button onclick="setDuration(31536000)" class="bg-gray-200 py-1 rounded">1Y</button>
+  <button onclick="setDuration(999999999)" class="bg-gray-200 py-1 rounded col-span-3">MAX</button>
+</div>
+<div id="countdownTimer" class="text-xs text-red-600 font-mono text-center hidden mb-2"></div>
+      
       <div class="flex justify-between text-xs text-gray-500">
         <span></span><span id="percentLabel">0%</span>
       </div>
@@ -59,11 +59,6 @@
 
       <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
 
-      <label class="block text-sm text-gray-500 mt-4 mb-1">Lock Duration (in seconds)</label>
-      <input type="number" id="lockDuration" placeholder="e.g. 60" class="w-full p-2 border rounded mb-3" />
-      <div id="countdownTimer" class="text-xs text-red-600 font-mono text-center hidden mb-2"></div>
-    </div>
-
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
@@ -71,6 +66,12 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, walletAddress = "", mode = "stake", balance = 0;
 let lockEndTime = null, lockInterval = null;
+let selectedDuration = 0;
+
+function setDuration(seconds) {
+  selectedDuration = seconds;
+  startCountdown(seconds); // Langsung mulai countdown
+}
 
 const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
 const abi = [ { "inputs":[],"stateMutability":"nonpayable","type":"constructor" },
@@ -166,6 +167,7 @@ function disconnectWallet() {
 }
 
 async function confirmAction() {
+async function confirmAction() {
   const amount = document.getElementById("amount").value;
   if (!amount || isNaN(amount)) return alert("Enter a valid amount");
 
@@ -175,8 +177,7 @@ async function confirmAction() {
   if (mode === "stake") {
     const tx = await txContract.stake({ value });
     await tx.wait();
-    const duration = parseInt(document.getElementById("lockDuration").value || "0");
-    if (duration > 0) startCountdown(duration);
+    if (selectedDuration > 0) startCountdown(selectedDuration);
   } else {
     const tx = await txContract.unstake(value);
     await tx.wait();
