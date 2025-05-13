@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,7 +71,139 @@
     let selectedDuration = 0;
 
     const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-    const abi = [/* <<<<< INSERT ABI HERE >>>>> */];
+    const abi = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "claimReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "depositReward",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getStakedAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "pendingReward",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "stake",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "stakers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardDebt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalStaked",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "unstake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+];
     const contract = new ethers.Contract(contractAddress, abi, provider);
 
     function setDuration(seconds) {
@@ -94,11 +225,61 @@
     }
 
     async function connectWallet() {
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      walletAddress = await signer.getAddress();
-      const network = await provider.getNetwork();
-      if (network.chainId !== 424) return alert("Switch to Nexus Network");
+  if (!window.ethereum) return alert("Install MetaMask or OKX Wallet dulu bro!");
+
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
+
+    // Tambahkan Nexus Network jika belum ada
+    await provider.send("wallet_addEthereumChain", [{
+      chainId: '0x1A8', // 424 desimal = 0x1A8 hex
+      chainName: 'Nexus',
+      rpcUrls: ['https://rpc.nexus.xyz/http'],
+      nativeCurrency: {
+        name: 'NEX',
+        symbol: 'NEX',
+        decimals: 18
+      },
+      blockExplorerUrls: ['https://nexus.explorer.caldera.xyz']
+    }]);
+
+    const network = await provider.getNetwork();
+    if (network.chainId !== 424) {
+      return alert("Please switch to Nexus Network");
+    }
+
+    // Update UI
+    document.getElementById("walletAddress").textContent =
+      walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+    document.getElementById("walletStatus").textContent = "Connected";
+    document.getElementById("walletStatus").classList.remove("cursor-pointer");
+    document.getElementById("disconnectBtn").classList.remove("hidden");
+    document.getElementById("stakeSection").classList.remove("hidden");
+
+    // Update balance
+    const balance = await provider.getBalance(walletAddress);
+    document.getElementById("walletBalance").textContent =
+      "Balance: " + (ethers.utils.formatEther(balance).slice(0, 6)) + " NEX";
+
+    // Get staking data
+    const connectedContract = contract.connect(signer);
+    const staked = await connectedContract.getStakedAmount(walletAddress);
+    const reward = await connectedContract.pendingReward(walletAddress);
+
+    document.getElementById("totalStaked").textContent = parseFloat(
+      ethers.utils.formatEther(staked)
+    ).toFixed(2) + " NEX";
+    document.getElementById("pendingRewards").textContent = parseFloat(
+      ethers.utils.formatEther(reward)
+    ).toFixed(2) + " NEX";
+  } catch (err) {
+    console.error("Error connecting wallet:", err);
+    alert("Gagal connect wallet bro");
+  }
+}
 
       document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
       document.getElementById("walletStatus").textContent = "Connected";
