@@ -216,28 +216,48 @@
         stakeBtn.classList.remove("bg-gray-900", "text-white");
       }
     }
-
     async function connectWallet() {
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      walletAddress = await signer.getAddress();
-      const network = await provider.getNetwork();
-      if (network.chainId !== 424) return alert("Switch to Nexus Network");
+  if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
+  alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
+  return;
+}
 
-      document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-      document.getElementById("walletStatus").textContent = "Connected";
-      document.getElementById("walletStatus").classList.remove("cursor-pointer");
-      document.getElementById("disconnectBtn").classList.remove("hidden");
+  try {
+    await ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: '0x189',
+        chainName: 'Nexus',
+        rpcUrls: ['https://rpc.nexus.xyz/http'],
+        nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
+        blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+      }]
+    });
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+await provider.send("eth_requestAccounts", []);
+walletAddress = await provider.getSigner().getAddress();
+onchain = true;
+isConnected = true;
+    alert("Wallet connected! Klik Play Onchain untuk mulai game.");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal connect wallet");
+  }
+}
+  document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+  document.getElementById("walletStatus").textContent = "Connected";
+  document.getElementById("walletStatus").classList.remove("cursor-pointer");
+  document.getElementById("disconnectBtn").classList.remove("hidden");
 
-      balance = await provider.getBalance(walletAddress);
-      document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,6)} NEX`;
+  balance = await provider.getBalance(walletAddress);
+  document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,8)} NEX`;
 
-      const staked = await contract.getStakedAmount(walletAddress);
-      const reward = await contract.pendingReward(walletAddress);
+  const staked = await contract.getStakedAmount(walletAddress);
+  const reward = await contract.pendingReward(walletAddress);
 
-      document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
-      document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
-      document.getElementById("stakeSection").classList.remove("hidden");
+  document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
+  document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+  document.getElementById("stakeSection").classList.remove("hidden");
     }
 
     function disconnectWallet() {
