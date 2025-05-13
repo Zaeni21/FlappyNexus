@@ -193,7 +193,18 @@
     "type": "receive"
   }
 ];
+async function updateUI() {
+  const staked = await contract.getStakedAmount(walletAddress);
+  const reward = await contract.pendingReward(walletAddress);
+  const rawBal = await provider.getBalance(walletAddress);
+  
+  balance = parseFloat(ethers.utils.formatEther(rawBal));
+  totalStaked = parseFloat(ethers.utils.formatEther(staked));
 
+  document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+  document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
+  document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+}
   async function connectWallet() {
     if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
     provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -274,7 +285,7 @@
 
     await tx.wait();
     alert(`${mode} successful`);
-    window.location.reload();
+    updateUI();
   }
 
   window.onload = () => {
