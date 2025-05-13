@@ -174,15 +174,15 @@ function drawBird() {
 function drawPipes() {
   pipes.forEach(p => {
     if (buildingImg.complete) {
-      // Gambar gedung atas (dibalik)
+      // Bagian atas (diputar 180 derajat)
       ctx.save();
-      ctx.translate(p.x + pipeWidth / 2, p.top);
-      ctx.scale(1, -1);
-      ctx.drawImage(buildingImg, -pipeWidth / 2, 0, pipeWidth, p.top);
+      ctx.translate(p.x + 30, p.top); // Pusat rotasi
+      ctx.rotate(Math.PI);
+      ctx.drawImage(buildingImg, -30, -p.top, 60, p.top);
       ctx.restore();
 
-      // Gambar gedung bawah (normal)
-      ctx.drawImage(buildingImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+      // Bagian bawah
+      ctx.drawImage(buildingImg, p.x, canvas.height - p.bottom, 60, p.bottom);
     }
   });
 }
