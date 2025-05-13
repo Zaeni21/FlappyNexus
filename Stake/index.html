@@ -58,170 +58,55 @@
     <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
 
-  <script>
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    let signer, walletAddress = "", mode = "stake", balance = 0;
-    let lockEndTime = null, lockInterval = null;
+<script>
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+let signer, walletAddress = "", mode = "stake", balance = 0;
+let lockEndTime = null, lockInterval = null;
 
-    const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
-    const abi = [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "claimReward",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "depositReward",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getStakedAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "pendingReward",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "stake",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakers",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardDebt",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "totalStaked",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "unstake",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "stateMutability": "payable",
-    "type": "receive"
-  }
+const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
+const abi = [ { "inputs":[],"stateMutability":"nonpayable","type":"constructor" },
+{ "inputs":[],"name":"claimReward","outputs":[],"stateMutability":"nonpayable","type":"function" },
+{ "inputs":[],"name":"depositReward","outputs":[],"stateMutability":"payable","type":"function" },
+{ "inputs":[{ "internalType":"address","name":"user","type":"address" }],
+"name":"getStakedAmount","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
+"stateMutability":"view","type":"function" },
+{ "inputs":[],"name":"owner","outputs":[{ "internalType":"address","name":"","type":"address" }],
+"stateMutability":"view","type":"function" },
+{ "inputs":[{ "internalType":"address","name":"user","type":"address" }],
+"name":"pendingReward","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
+"stateMutability":"view","type":"function" },
+{ "inputs":[],"name":"stake","outputs":[],"stateMutability":"payable","type":"function" },
+{ "inputs":[{ "internalType":"address","name":"","type":"address" }],
+"name":"stakers","outputs":[{ "internalType":"uint256","name":"amount","type":"uint256" },
+{ "internalType":"uint256","name":"rewardDebt","type":"uint256" }],
+"stateMutability":"view","type":"function" },
+{ "inputs":[],"name":"totalStaked","outputs":[{ "internalType":"uint256","name":"","type":"uint256" }],
+"stateMutability":"view","type":"function" },
+{ "inputs":[{ "internalType":"uint256","name":"amount","type":"uint256" }],
+"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function" },
+{ "stateMutability":"payable","type":"receive" }
 ];
 
-    const contract = new ethers.Contract(contractAddress, abi, provider);
+const contract = new ethers.Contract(contractAddress, abi, provider);
 
-    function selectMode(m) {
-      mode = m;
-      const stakeBtn = document.getElementById("stakeBtn");
-      const unstakeBtn = document.getElementById("unstakeBtn");
-      if (m === "stake") {
-        stakeBtn.classList.add("bg-gray-900", "text-white");
-        stakeBtn.classList.remove("bg-gray-200", "text-gray-800");
-        unstakeBtn.classList.add("bg-gray-200", "text-gray-800");
-        unstakeBtn.classList.remove("bg-gray-900", "text-white");
-      } else {
-        unstakeBtn.classList.add("bg-gray-900", "text-white");
-        unstakeBtn.classList.remove("bg-gray-200", "text-gray-800");
-        stakeBtn.classList.add("bg-gray-200", "text-gray-800");
-        stakeBtn.classList.remove("bg-gray-900", "text-white");
-      }
-    }
-    async function connectWallet() {
-  if (!window.ethereum || (!window.okxwallet && !window.ethereum.isConnected())) {
-  alert("Tidak ada wallet terdeteksi. Install OKX Wallet atau MetaMask dulu bro!");
-  return;
+function selectMode(m) {
+  mode = m;
+  const stakeBtn = document.getElementById("stakeBtn");
+  const unstakeBtn = document.getElementById("unstakeBtn");
+  if (m === "stake") {
+    stakeBtn.classList.add("bg-gray-900", "text-white");
+    stakeBtn.classList.remove("bg-gray-200", "text-gray-800");
+    unstakeBtn.classList.add("bg-gray-200", "text-gray-800");
+    unstakeBtn.classList.remove("bg-gray-900", "text-white");
+  } else {
+    unstakeBtn.classList.add("bg-gray-900", "text-white");
+    unstakeBtn.classList.remove("bg-gray-200", "text-gray-800");
+    stakeBtn.classList.add("bg-gray-200", "text-gray-800");
+    stakeBtn.classList.remove("bg-gray-900", "text-white");
+  }
 }
 
+async function connectWallet() {
   try {
     await ethereum.request({
       method: 'wallet_addEthereumChain',
@@ -233,105 +118,104 @@
         blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
       }]
     });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-await provider.send("eth_requestAccounts", []);
-walletAddress = await provider.getSigner().getAddress();
-onchain = true;
-isConnected = true;
-    alert("Wallet connected! Klik Play Onchain untuk mulai game.");
+
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
+
+    document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
+    document.getElementById("walletStatus").textContent = "Connected";
+    document.getElementById("walletStatus").classList.remove("cursor-pointer");
+    document.getElementById("disconnectBtn").classList.remove("hidden");
+
+    balance = await provider.getBalance(walletAddress);
+    document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,8)} NEX`;
+
+    const txContract = new ethers.Contract(contractAddress, abi, provider);
+    const staked = await txContract.getStakedAmount(walletAddress);
+    const reward = await txContract.pendingReward(walletAddress);
+
+    document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
+    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+
+    document.getElementById("stakeSection").classList.remove("hidden");
   } catch (err) {
     console.error(err);
     alert("Gagal connect wallet");
   }
 }
-  document.getElementById("walletAddress").textContent = walletAddress.slice(0,6) + "..." + walletAddress.slice(-4);
-  document.getElementById("walletStatus").textContent = "Connected";
-  document.getElementById("walletStatus").classList.remove("cursor-pointer");
-  document.getElementById("disconnectBtn").classList.remove("hidden");
 
-  balance = await provider.getBalance(walletAddress);
-  document.getElementById("walletBalance").textContent = `Balance: ${(ethers.utils.formatEther(balance)).slice(0,8)} NEX`;
+function disconnectWallet() {
+  signer = null;
+  walletAddress = "";
+  document.getElementById("walletAddress").textContent = "-";
+  document.getElementById("walletBalance").textContent = "Balance: -";
+  document.getElementById("walletStatus").textContent = "Connect";
+  document.getElementById("walletStatus").classList.add("cursor-pointer");
+  document.getElementById("disconnectBtn").classList.add("hidden");
+  document.getElementById("stakeSection").classList.add("hidden");
+}
 
-  const staked = await contract.getStakedAmount(walletAddress);
-  const reward = await contract.pendingReward(walletAddress);
+async function confirmAction() {
+  const amount = document.getElementById("amount").value;
+  if (!amount || isNaN(amount)) return alert("Enter a valid amount");
 
-  document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(staked)).toFixed(2) + " NEX";
-  document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
-  document.getElementById("stakeSection").classList.remove("hidden");
+  const value = ethers.utils.parseEther(amount);
+  const txContract = contract.connect(signer);
+
+  if (mode === "stake") {
+    const tx = await txContract.stake({ value });
+    await tx.wait();
+    const duration = parseInt(document.getElementById("lockDuration").value || "0");
+    if (duration > 0) startCountdown(duration);
+  } else {
+    const tx = await txContract.unstake(value);
+    await tx.wait();
+  }
+
+  alert(`${mode} successful`);
+  window.location.reload();
+}
+
+function startCountdown(duration) {
+  const timer = document.getElementById("countdownTimer");
+  const lockEndTime = Date.now() + duration * 1000;
+  timer.classList.remove("hidden");
+
+  if (lockInterval) clearInterval(lockInterval);
+  lockInterval = setInterval(() => {
+    const remaining = Math.floor((lockEndTime - Date.now()) / 1000);
+    if (remaining <= 0) {
+      timer.textContent = "Lock expired. You can unstake.";
+      clearInterval(lockInterval);
+    } else {
+      timer.textContent = `Locked for ${remaining}s`;
     }
+  }, 1000);
+}
 
-    function disconnectWallet() {
-      signer = null;
-      walletAddress = "";
-      document.getElementById("walletAddress").textContent = "-";
-      document.getElementById("walletBalance").textContent = "Balance: -";
-      document.getElementById("walletStatus").textContent = "Connect";
-      document.getElementById("walletStatus").classList.add("cursor-pointer");
-      document.getElementById("disconnectBtn").classList.add("hidden");
-      document.getElementById("stakeSection").classList.add("hidden");
-    }
+document.getElementById("slider").addEventListener("input", () => {
+  const percent = document.getElementById("slider").value;
+  document.getElementById("percentLabel").textContent = percent + "%";
+  const val = (balance * percent / 100 / 1e18).toFixed(4);
+  document.getElementById("amount").value = val;
+});
 
-    async function confirmAction() {
-      const amount = document.getElementById("amount").value;
-      if (!amount || isNaN(amount)) return alert("Enter a valid amount");
+document.getElementById("amount").addEventListener("input", () => {
+  const val = parseFloat(document.getElementById("amount").value);
+  if (!val || balance === 0) {
+    document.getElementById("percentLabel").textContent = "0%";
+    document.getElementById("slider").value = 0;
+    return;
+  }
+  const percent = Math.min((val * 1e18 / balance) * 100, 100);
+  document.getElementById("slider").value = percent;
+  document.getElementById("percentLabel").textContent = percent.toFixed(0) + "%";
+});
 
-      const value = ethers.utils.parseEther(amount);
-      const txContract = contract.connect(signer);
-
-      if (mode === "stake") {
-        const tx = await txContract.stake({ value });
-        await tx.wait();
-
-        const duration = parseInt(document.getElementById("lockDuration").value || "0");
-        if (duration > 0) startCountdown(duration);
-      } else {
-        const tx = await txContract.unstake(value);
-        await tx.wait();
-      }
-
-      alert(`${mode} successful`);
-      window.location.reload();
-    }
-
-    function startCountdown(duration) {
-      lockEndTime = Date.now() + duration * 1000;
-      const timer = document.getElementById("countdownTimer");
-      timer.classList.remove("hidden");
-
-      if (lockInterval) clearInterval(lockInterval);
-      lockInterval = setInterval(() => {
-        const remaining = Math.floor((lockEndTime - Date.now()) / 1000);
-        if (remaining <= 0) {
-          timer.textContent = "Lock expired. You can unstake.";
-          clearInterval(lockInterval);
-        } else {
-          timer.textContent = `Locked for ${remaining}s`;
-        }
-      }, 1000);
-    }
-
-    document.getElementById("slider").addEventListener("input", () => {
-      const percent = document.getElementById("slider").value;
-      document.getElementById("percentLabel").textContent = percent + "%";
-      const val = (balance * percent / 100 / 1e18).toFixed(4);
-      document.getElementById("amount").value = val;
-    });
-
-    document.getElementById("amount").addEventListener("input", () => {
-      const val = parseFloat(document.getElementById("amount").value);
-      if (!val || balance === 0) {
-        document.getElementById("percentLabel").textContent = "0%";
-        document.getElementById("slider").value = 0;
-        return;
-      }
-      const percent = Math.min((val * 1e18 / balance) * 100, 100);
-      document.getElementById("slider").value = percent;
-      document.getElementById("percentLabel").textContent = percent.toFixed(0) + "%";
-    });
-
-    window.onload = () => {
-      document.getElementById("walletStatus").addEventListener("click", connectWallet);
-    };
-  </script>
+window.onload = () => {
+  document.getElementById("walletStatus").addEventListener("click", connectWallet);
+};
+</script>
 </body>
 </html>
