@@ -154,12 +154,22 @@ function drawBird() {
   if (landakImg.complete) ctx.drawImage(landakImg, bird.x, bird.y, bird.width, bird.height);
 }
 function drawPipes() {
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+
+  ctx.filter = "blur(0.5px)"; // tambahin efek blur dikit
+
   pipes.forEach(p => {
     if (bambooImg.complete) {
       ctx.drawImage(bambooImg, p.x, 0, pipeWidth, p.top);
       ctx.drawImage(bambooImg, p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
     }
   });
+
+  ctx.restore(); // balikin context ke normal
 }
 function update() {
   if (gameOver) return;
