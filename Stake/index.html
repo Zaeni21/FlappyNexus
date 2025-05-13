@@ -19,9 +19,9 @@
         </div>
         <div class="space-x-2">
           <span id="walletStatus">
-  <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
-  <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
-</span>
+            <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
+            <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
+          </span>
         </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
@@ -38,7 +38,7 @@
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-4">
+    <div id="stakeForm" class="bg-white shadow rounded-lg p-4">
       <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
       <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3" />
       <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-1">
@@ -76,24 +76,31 @@
 
       document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
       document.getElementById("connectBtn").classList.add("hidden");
-document.getElementById("disconnectBtn").classList.remove("hidden");
+      document.getElementById("disconnectBtn").classList.remove("hidden");
 
       const rawBal = await provider.getBalance(walletAddress);
       balance = parseFloat(ethers.utils.formatEther(rawBal));
       document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+
+      // Simulasi total staked (ganti sesuai smart contract)
+      const totalStaked = 0.00; // misalnya hasil fetch
+      document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
+
+      document.getElementById("stakeForm").style.display = totalStaked === 0 ? "none" : "block";
     }
 
     function disconnectWallet() {
-  walletAddress = null;
-  provider = null;
-  signer = null;
-  balance = 0;
+      walletAddress = null;
+      provider = null;
+      signer = null;
+      balance = 0;
 
-  document.getElementById("walletAddress").textContent = "-";
-  document.getElementById("walletBalance").textContent = "Balance: -";
-  document.getElementById("connectBtn").classList.remove("hidden");
-  document.getElementById("disconnectBtn").classList.add("hidden");
-}
+      document.getElementById("walletAddress").textContent = "-";
+      document.getElementById("walletBalance").textContent = "Balance: -";
+      document.getElementById("connectBtn").classList.remove("hidden");
+      document.getElementById("disconnectBtn").classList.add("hidden");
+      document.getElementById("stakeForm").style.display = "none";
+    }
 
     const slider = document.getElementById("slider");
     const amountInput = document.getElementById("amount");
@@ -116,12 +123,7 @@ document.getElementById("disconnectBtn").classList.remove("hidden");
       if (!walletAddress) return alert("Please connect wallet.");
       if (!amt || amt <= 0) return alert("Enter amount.");
       if (amt > balance) return alert("Insufficient balance.");
-
-      if (mode === "stake") {
-        alert(`Staking ${amt} NEX...`);
-      } else {
-        alert(`Unstaking ${amt} NEX...`);
-      }
+      alert(`${mode === "stake" ? "Staking" : "Unstaking"} ${amt} NEX...`);
     }
   </script>
 </body>
