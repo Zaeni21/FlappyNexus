@@ -9,23 +9,22 @@
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="max-w-md mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-3xl font-bold">Stake NEX</h1>
+      <div>
+        <button id="walletStatus" onclick="connectWallet()" class="text-blue-600 text-sm">Connect</button>
+        <button id="disconnectBtn" onclick="disconnectWallet()" class="text-sm text-red-500 hidden ml-2">Disconnect</button>
+      </div>
+    </div>
 
     <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <div class="flex justify-between items-center text-sm">
+      <div class="flex justify-between text-sm">
         <div>
           <p class="text-gray-500">Wallet</p>
           <p id="walletAddress" class="font-mono">-</p>
-        </div>
-        <div class="space-x-2">
-          <span id="walletStatus">
-            <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
-            <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
-          </span>
+          <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
         </div>
       </div>
-      <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
-
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
           <p class="text-gray-500">Total Staked</p>
@@ -38,102 +37,127 @@
       </div>
     </div>
 
-    <div id="stakeForm" class="bg-white shadow rounded-lg p-4">
+    <div id="stakingForm" class="bg-white shadow rounded-lg p-4 hidden">
       <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3" />
-      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-1">
-      <p id="percentageText" class="text-sm text-right text-gray-500 mb-3">0%</p>
-
+      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-2">
+      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-2">
+      <p id="percentageLabel" class="text-right text-xs text-gray-500 mb-2">0%</p>
       <div class="grid grid-cols-2 gap-4 mb-3">
-        <button id="stakeBtn" onclick="setMode('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
-        <button id="unstakeBtn" onclick="setMode('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
+        <button onclick="stake()" class="bg-gray-900 text-white py-2 rounded">Stake</button>
+        <button onclick="unstake()" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
-
-      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
+      <button onclick="claimReward()" class="w-full bg-blue-600 text-white py-2 rounded">Claim Reward</button>
     </div>
 
-    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
+    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT for degen culture</p>
   </div>
 
-  <script>
-    let provider, signer, walletAddress, balance = 0;
-    let mode = 'stake';
-    let totalStaked = 0;
+<script>
+  const contractAddress = "0xcc0014d47e41d8095D97C074b20B7abdA1F87E64";
+  const abi = [
+    { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+    { "inputs": [], "name": "claimReward", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [], "name": "depositReward", "outputs": [], "stateMutability": "payable", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "user", "type": "address" }], "name": "getStakedAmount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "user", "type": "address" }], "name": "pendingReward", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "stake", "outputs": [], "stateMutability": "payable", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "stakers", "outputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }, { "internalType": "uint256", "name": "rewardDebt", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "totalStaked", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "unstake", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "stateMutability": "payable", "type": "receive" }
+  ];
 
-    function setMode(selected) {
-      mode = selected;
-      document.getElementById('stakeBtn').className =
-        selected === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
-      document.getElementById('unstakeBtn').className =
-        selected === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+  let provider, signer, contract, walletAddress;
 
-      const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
-      document.getElementById("amount").style.display = showForm ? "block" : "none";
-      document.getElementById("slider").style.display = showForm ? "block" : "none";
-      document.getElementById("percentageText").style.display = showForm ? "block" : "none";
-    }
+  const amountInput = document.getElementById("amount");
+  const slider = document.getElementById("slider");
+  const percentLabel = document.getElementById("percentageLabel");
 
-    async function connectWallet() {
-      if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
+  slider.addEventListener("input", () => {
+    amountInput.value = slider.value;
+    percentLabel.textContent = `${slider.value}%`;
+  });
+
+  amountInput.addEventListener("input", () => {
+    const value = Math.min(100, parseFloat(amountInput.value) || 0);
+    slider.value = value;
+    percentLabel.textContent = `${value}%`;
+  });
+
+  async function connectWallet() {
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: "0x189",
+          chainName: "Nexus",
+          rpcUrls: ["https://rpc.nexus.xyz/http"],
+          nativeCurrency: { name: "NEX", symbol: "NEX", decimals: 18 },
+          blockExplorerUrls: ["https://nexus-new.explorer.caldera.xyz"]
+        }]
+      });
+
       provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       signer = provider.getSigner();
       walletAddress = await signer.getAddress();
+      contract = new ethers.Contract(contractAddress, abi, signer);
 
       document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
-      document.getElementById("connectBtn").classList.add("hidden");
+      document.getElementById("walletStatus").textContent = "Connected";
       document.getElementById("disconnectBtn").classList.remove("hidden");
 
-      const rawBal = await provider.getBalance(walletAddress);
-      balance = parseFloat(ethers.utils.formatEther(rawBal));
-      document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
+      const balance = await provider.getBalance(walletAddress);
+      document.getElementById("walletBalance").textContent = "Balance: " + ethers.utils.formatEther(balance).slice(0,6) + " NEX";
 
-      // Simulasi staked
-      totalStaked = 0.00; // <- Ganti dengan hasil fetch onchain
-      document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
-
-      setMode(mode); // update tampilan berdasarkan mode dan totalStaked
+      await refreshData();
+    } catch (e) {
+      alert("Failed to connect wallet");
+      console.error(e);
     }
+  }
 
-    function disconnectWallet() {
-      walletAddress = null;
-      provider = null;
-      signer = null;
-      balance = 0;
+  function disconnectWallet() {
+    walletAddress = null;
+    provider = null;
+    document.getElementById("walletAddress").textContent = "-";
+    document.getElementById("walletBalance").textContent = "Balance: -";
+    document.getElementById("walletStatus").textContent = "Connect";
+    document.getElementById("disconnectBtn").classList.add("hidden");
+    document.getElementById("stakingForm").classList.add("hidden");
+  }
 
-      document.getElementById("walletAddress").textContent = "-";
-      document.getElementById("walletBalance").textContent = "Balance: -";
-      document.getElementById("connectBtn").classList.remove("hidden");
-      document.getElementById("disconnectBtn").classList.add("hidden");
+  async function refreshData() {
+    const total = await contract.totalStaked();
+    document.getElementById("totalStaked").textContent = parseFloat(ethers.utils.formatEther(total)).toFixed(2) + " NEX";
 
-      document.getElementById("amount").style.display = "none";
-      document.getElementById("slider").style.display = "none";
-      document.getElementById("percentageText").style.display = "none";
-    }
+    const pending = await contract.pendingReward(walletAddress);
+    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(pending)).toFixed(2) + " NEX";
 
-    const slider = document.getElementById("slider");
-    const amountInput = document.getElementById("amount");
-    const percentageText = document.getElementById("percentageText");
+    const staked = await contract.getStakedAmount(walletAddress);
+    document.getElementById("stakingForm").classList.toggle("hidden", staked.eq(0));
+  }
 
-    slider.addEventListener("input", () => {
-      const val = (parseFloat(slider.value) / 100) * balance;
-      amountInput.value = val.toFixed(2);
-      percentageText.textContent = `${slider.value}%`;
-    });
+  async function stake() {
+    const amount = ethers.utils.parseEther(amountInput.value || "0");
+    const tx = await contract.stake({ value: amount });
+    await tx.wait();
+    await refreshData();
+  }
 
-    amountInput.addEventListener("input", () => {
-      const val = Math.min(balance, parseFloat(amountInput.value) || 0);
-      slider.value = ((val / balance) * 100).toFixed(0);
-      percentageText.textContent = `${slider.value}%`;
-    });
+  async function unstake() {
+    const amount = ethers.utils.parseEther(amountInput.value || "0");
+    const tx = await contract.unstake(amount);
+    await tx.wait();
+    await refreshData();
+  }
 
-    function confirmAction() {
-      const amt = parseFloat(amountInput.value);
-      if (!walletAddress) return alert("Please connect wallet.");
-      if (!amt || amt <= 0) return alert("Enter amount.");
-      if (amt > balance) return alert("Insufficient balance.");
-      alert(`${mode === "stake" ? "Staking" : "Unstaking"} ${amt} NEX...`);
-    }
-  </script>
+  async function claimReward() {
+    const tx = await contract.claimReward();
+    await tx.wait();
+    await refreshData();
+  }
+</script>
 </body>
 </html>
