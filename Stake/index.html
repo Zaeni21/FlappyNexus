@@ -1,69 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stake NEX</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <style>
-    body {
-      background-color: #0a0a0f;
-      color: #c0c0ff;
-      font-family: 'Inter', sans-serif;
-    }
-    .glass {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 1rem;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 </head>
-<body class="flex items-center justify-center min-h-screen px-4">
-  <div class="w-full max-w-md space-y-6">
-    <h1 class="text-3xl font-bold text-center text-blue-400">Stake NEX</h1>
+<body class="bg-gray-50 text-gray-900 font-sans">
+  <div class="max-w-md mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Stake NEX</h1>
 
-    <div class="glass p-6 space-y-2">
-      <div class="flex justify-between text-sm">
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+      <div class="flex justify-between items-center text-sm">
         <div>
-          <div class="text-gray-400">Wallet</div>
-          <div id="walletAddress" class="font-mono">-</div>
+          <p class="text-gray-500">Wallet</p>
+          <p id="walletAddress" class="font-mono">-</p>
         </div>
-        <div>
-          <span id="connectBtn" class="text-blue-400 font-semibold cursor-pointer" onclick="connectWallet()">Connect</span>
-          <span id="disconnectBtn" class="text-red-400 font-semibold cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
+        <div class="space-x-2">
+          <span id="walletStatus">
+            <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
+            <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
+          </span>
         </div>
       </div>
-      <div id="walletBalance" class="text-sm text-gray-400">Balance: -</div>
+      <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
 
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
-          <p class="text-gray-400 text-sm">Total Staked</p>
-          <p id="totalStaked" class="text-lg font-bold">0.00 NEX</p>
+          <p class="text-gray-500">Total Staked</p>
+          <p id="totalStaked" class="text-lg font-semibold">0.00 NEX</p>
         </div>
         <div>
-          <p class="text-gray-400 text-sm">Pending Rewards</p>
-          <p id="pendingRewards" class="text-lg font-bold">0.00 NEX</p>
+          <p class="text-gray-500">Pending Rewards</p>
+          <p id="pendingRewards" class="text-lg font-semibold">0.00 NEX</p>
         </div>
       </div>
     </div>
 
-    <div class="glass p-6 space-y-4">
-      <label class="block text-sm text-gray-400">Amount</label>
-      <input type="number" id="amount" placeholder="0.00" class="w-full p-2 bg-transparent border border-gray-600 rounded text-white outline-none" />
-      <input type="range" min="0" max="100" value="0" id="slider" class="w-full">
-      <p id="percentageText" class="text-sm text-right text-gray-400">0%</p>
+    <div id="stakeForm" class="bg-white shadow rounded-lg p-4">
+      <label class="block text-sm text-gray-500 mb-1" for="amount">Amount</label>
+      <input type="number" id="amount" placeholder="0.0" class="w-full p-2 border rounded mb-3" />
+      <input type="range" min="0" max="100" value="0" id="slider" class="w-full mb-1">
+      <p id="percentageText" class="text-sm text-right text-gray-500 mb-3">0%</p>
 
-      <div class="flex gap-2">
-        <button id="stakeBtn" onclick="setMode('stake')" class="w-1/2 py-2 bg-blue-500 text-white rounded">Stake</button>
-        <button id="unstakeBtn" onclick="setMode('unstake')" class="w-1/2 py-2 bg-gray-700 text-white rounded">Unstake</button>
+      <div class="grid grid-cols-2 gap-4 mb-3">
+        <button id="stakeBtn" onclick="setMode('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
+        <button id="unstakeBtn" onclick="setMode('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
-      <button onclick="confirmAction()" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Confirm</button>
+
+      <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
     </div>
 
-    <p class="text-center text-xs text-gray-500">Built by JAWIRNFT with love for degen culture</p>
+    <p class="text-center text-xs text-gray-400 mt-6">Built by JAWIRNFT with love for degen culture</p>
   </div>
-  
 <script>
   let provider, signer, walletAddress, contract;
   let balance = 0, totalStaked = 0;
