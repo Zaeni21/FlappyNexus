@@ -25,7 +25,9 @@
         </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
-
+<div class="text-center text-sm text-gray-500 mb-2">
+  APY: <span id="apyValue">-</span>% &bull; Reward Pool: <span id="poolBalance">-</span> NEX
+</div>
       <div class="grid grid-cols-2 gap-4 text-center mt-4">
         <div>
           <p class="text-gray-500">Total Staked</p>
@@ -264,6 +266,12 @@ async function updateUI() {
   document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
   document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
   document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
+	const apy = await contract.apy();
+document.getElementById("apyValue").textContent = apy.toString();
+
+const contractBalance = await provider.getBalance(contractAddress);
+document.getElementById("poolBalance").textContent =
+  parseFloat(ethers.utils.formatEther(contractBalance)).toFixed(2);
 }
   async function connectWallet() {
     if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
@@ -343,9 +351,15 @@ async function updateUI() {
       ? await contract.stake({ value })
       : await contract.unstake(value);
 
-    await tx.wait();
-    alert(`${mode} successful`);
-    updateUI();
+    const receipt = await tx.wait();
+
+const txBox = document.getElementById("txHashMsg");
+const txLink = document.getElementById("txLink");
+txLink.href = `https://nexus-new.explorer.caldera.xyz/tx/${receipt.transactionHash}`;
+txBox.classList.remove("hidden");
+setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
+
+updateUI();
   }
 
   window.onload = () => {
@@ -372,8 +386,14 @@ amountInput.addEventListener("input", () => {
   if (!walletAddress) return alert("Connect your wallet first.");
   try {
     const tx = await contract.claimReward();
-    await tx.wait();
-    alert("Rewards claimed!");
+    const receipt = await tx.wait();
+
+// TX hash UI
+const txBox = document.getElementById("txHashMsg");
+const txLink = document.getElementById("txLink");
+txLink.href = `https://nexus-new.explorer.caldera.xyz/tx/${receipt.transactionHash}`;
+txBox.classList.remove("hidden");
+setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 
     // Tambahkan delay 1 detik sebelum refresh UI
     setTimeout(updateUI, 1000);
@@ -418,5 +438,8 @@ async function depositRewards() {
   }
 }, 3000); // update setiap 3 detik
 </script>
+	<div id="txHashMsg" class="fixed bottom-4 right-4 bg-white shadow-md text-blue-600 text-xs px-3 py-2 rounded hidden z-50">
+  <a id="txLink" href="#" target="_blank">View Transaction</a>
+	</div>
 </body>
 </html>
