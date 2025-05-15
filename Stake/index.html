@@ -317,7 +317,9 @@ amountInput.addEventListener("input", () => {
     const tx = await contract.claimReward();
     await tx.wait();
     alert("Rewards claimed!");
-    updateUI();
+
+    // Tambahkan delay 1 detik sebelum refresh UI
+    setTimeout(updateUI, 1000);
   } catch (err) {
     alert("Claim failed: " + err.message);
   }
