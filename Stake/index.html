@@ -48,7 +48,10 @@
         <button id="stakeBtn" onclick="setMode('stake')" class="bg-gray-900 text-white py-2 rounded">Stake</button>
         <button id="unstakeBtn" onclick="setMode('unstake')" class="bg-gray-200 text-gray-800 py-2 rounded">Unstake</button>
       </div>
-
+<div class="grid grid-cols-2 gap-4 mt-4">
+  <button onclick="claimRewards()" class="w-full bg-green-600 text-white py-2 rounded">Claim Rewards</button>
+  <button onclick="depositRewards()" class="w-full bg-purple-600 text-white py-2 rounded">Deposit Rewards</button>
+</div>
       <button onclick="confirmAction()" class="w-full bg-blue-600 text-white py-2 rounded">Confirm</button>
     </div>
 
@@ -308,6 +311,37 @@ amountInput.addEventListener("input", () => {
   slider.value = ((val / base) * 100).toFixed(0);
   percentageText.textContent = `${slider.value}%`;
 });
+  async function claimRewards() {
+  if (!walletAddress) return alert("Connect your wallet first.");
+  try {
+    const tx = await contract.claimReward();
+    await tx.wait();
+    alert("Rewards claimed!");
+    updateUI();
+  } catch (err) {
+    alert("Claim failed: " + err.message);
+  }
+}
+
+async function depositRewards() {
+  const admin = "0x408e68F9dce5A0cd175Cd7C7EefB634D5f03A257";
+  if (!walletAddress || walletAddress.toLowerCase() !== admin.toLowerCase()) {
+    return alert("Only admin can deposit rewards.");
+  }
+
+  const amount = prompt("Enter reward amount in NEX to deposit:");
+  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+
+  try {
+    const value = ethers.utils.parseEther(amount.toString());
+    const tx = await contract.depositReward({ value });
+    await tx.wait();
+    alert("Reward deposited successfully!");
+    updateUI();
+  } catch (err) {
+    alert("Deposit failed: " + err.message);
+  }
+}
 </script>
 </body>
 </html>
