@@ -325,21 +325,31 @@ amountInput.addEventListener("input", () => {
 
 async function depositRewards() {
   const admin = "0x58c5796edc7001b949693cc2655d190db54c271f";
-  if (!walletAddress || walletAddress.toLowerCase() !== admin.toLowerCase()) {
-    return alert("Only admin can deposit rewards.");
+  if (!walletAddress) {
+    alert("Please connect your wallet.");
+    return;
   }
 
-  const amount = prompt("Enter reward amount in NEX to deposit:");
-  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+  if (walletAddress.toLowerCase() !== admin.toLowerCase()) {
+    alert("Only admin can deposit rewards.");
+    return;
+  }
+
+  const input = prompt("Enter NEX amount to deposit as reward:");
+  if (!input || isNaN(input) || parseFloat(input) <= 0) {
+    alert("Invalid input.");
+    return;
+  }
 
   try {
-    const value = ethers.utils.parseEther(amount.toString());
+    const value = ethers.utils.parseEther(input.toString());
     const tx = await contract.depositReward({ value });
     await tx.wait();
     alert("Reward deposited successfully!");
     updateUI();
   } catch (err) {
-    alert("Deposit failed: " + err.message);
+    console.error(err);
+    alert("Deposit failed: " + (err.data?.message || err.message));
   }
 }
 </script>
