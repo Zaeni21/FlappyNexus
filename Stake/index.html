@@ -336,7 +336,7 @@ async function depositRewards() {
   }
 
   const input = prompt("Enter NEX amount to deposit as reward:");
-  if (!input || isNaN(input) || parseFloat(input) <= 0) {
+  if (!input || isNaN(input) || parseFloat(input) <= 10) {
     alert("Invalid input.");
     return;
   }
