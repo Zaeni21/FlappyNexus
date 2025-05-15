@@ -407,6 +407,16 @@ async function depositRewards() {
     alert("Deposit failed: " + (err.data?.message || err.message));
   }
 }
+	setInterval(async () => {
+  if (walletAddress && contract) {
+    try {
+      const reward = await contract.pendingReward(walletAddress);
+      document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(4) + " NEX";
+    } catch (err) {
+      console.error("Failed to update reward:", err);
+    }
+  }
+}, 3000); // update setiap 3 detik
 </script>
 </body>
 </html>
