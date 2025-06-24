@@ -71,7 +71,7 @@
   let balance = 0, totalStaked = 0;
   let mode = "stake";
 
-  const contractAddress = "0xC04F4564586EaAF6846cAcbF7E5F63c40E8b8595"; // Nexus
+  const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
 	{
 		"inputs": [],
@@ -285,11 +285,11 @@ document.getElementById("poolBalance").textContent =
     provider = new ethers.providers.Web3Provider(window.ethereum);
 
     await provider.send("wallet_addEthereumChain", [{
-      chainId: '0x189',
-      chainName: 'Nexus',
-      rpcUrls: ['https://rpc.nexus.xyz/http'],
+      chainId: '0xF64',
+      chainName: 'Nexus Tesnet',
+      rpcUrls: ['https://nexus-testnet.g.alchemy.com/public'],
       nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
-      blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+      blockExplorerUrls: ['https://testnet3.explorer.nexus.xyz']
     }]);
 
     await provider.send("eth_requestAccounts", []);
