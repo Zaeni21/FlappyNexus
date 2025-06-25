@@ -285,10 +285,10 @@ document.getElementById("poolBalance").textContent =
     provider = new ethers.providers.Web3Provider(window.ethereum);
 
     await provider.send("wallet_addEthereumChain", [{
-      chainId: '0xF64',
+      chainId: '0xf64',
       chainName: 'Nexus Tesnet',
       rpcUrls: ['https://nexus-testnet.g.alchemy.com/public'],
-      nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
+      nativeCurrency: { name: 'NEX Token', symbol: 'NEX', decimals: 18 },
       blockExplorerUrls: ['https://testnet3.explorer.nexus.xyz']
     }]);
 
@@ -362,7 +362,7 @@ document.getElementById("poolBalance").textContent =
 
 const txBox = document.getElementById("txHashMsg");
 const txLink = document.getElementById("txLink");
-txLink.href = `https://nexus-new.explorer.caldera.xyz/tx/${receipt.transactionHash}`;
+txLink.href = `https://testnet3.explorer.nexus.xyz/tx/${receipt.transactionHash}`;
 txBox.classList.remove("hidden");
 setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 
@@ -398,7 +398,7 @@ amountInput.addEventListener("input", () => {
 // TX hash UI
 const txBox = document.getElementById("txHashMsg");
 const txLink = document.getElementById("txLink");
-txLink.href = `https://nexus-new.explorer.caldera.xyz/tx/${receipt.transactionHash}`;
+txLink.href = `https://testnet3.explorer.nexus.xyz/tx/${receipt.transactionHash}`;
 txBox.classList.remove("hidden");
 setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 
