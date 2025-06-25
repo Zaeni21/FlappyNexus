@@ -319,11 +319,11 @@ async function connectWallet() {
     await ethereum.request({
       method: 'wallet_addEthereumChain',
       params: [{
-        chainId: '0x189',
-        chainName: 'Nexus',
-        rpcUrls: ['https://rpc.nexus.xyz/http'],
-        nativeCurrency: { name: 'NEX', symbol: 'NEX', decimals: 18 },
-        blockExplorerUrls: ['https://nexus-new.explorer.caldera.xyz']
+        chainId: '0xf64',
+        chainName: 'Nexus Tesnet',
+        rpcUrls: ['https://nexus-testnet.g.alchemy.com/public'],
+        nativeCurrency: { name: 'NEX Token', symbol: 'NEX', decimals: 18 },
+        blockExplorerUrls: ['https://testnet3.explorer.nexus.xyz']
       }]
     });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
