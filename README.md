@@ -59,3 +59,11 @@ The top 10 players each week will receive token rewards:
 Feel free to fork, clone, or submit a PR. Built by [@JAWIRNFT](https://twitter.com/JAWIRNFT) for the Web3 gaming community.
 
 ---
+## Tech Stack
+- Frontend: HTML5 Canvas, JavaScript, TailwindCSS
+- Web3: Ethers.js v6 (update kalau masih v5)
+- Smart Contract: Solidity ^0.8.0 on Nexus Chain
+- Deploy: Vercel (https://flappynexus.vercel.app/)
+
+## Live Demo
+Play now: https://flappynexus.vercel.app/
