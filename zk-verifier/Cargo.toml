@@ -1,0 +1,13 @@
+[package]
+name = "flappy-zk-verifier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nexus-zkvm = { git = "https://github.com/nexus-xyz/nexus-zkvm", tag = "v0.3.6" }  # adjust tag kalau ada lebih baru
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
