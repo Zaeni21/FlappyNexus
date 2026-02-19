@@ -47,19 +47,6 @@ The top 10 players each week will receive token rewards:
 > Rewards are distributed manually or via smart contract.
 
 ## Tech Stack
-
-- HTML5 Canvas Game Engine
-- JavaScript + Ethers.js
-- TailwindCSS for UI
-- Solidity (on Nexus)
-- Deployed with Vercel
-
-## Developer & Contributions
-
-Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://twitter.com/JAWIRNFT) for the Web3 gaming community.
-
----
-## Tech Stack
 - Frontend: HTML5 Canvas, JavaScript, TailwindCSS
 - Web3: Ethers.js v6 (update kalau masih v5)
 - Smart Contract: Solidity ^0.8.0 on Nexus Chain
@@ -67,3 +54,9 @@ Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://twitter.com
 
 ## Live Demo
 Play now: https://flappynexus.vercel.app/
+
+## Developer & Contributions
+
+Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://x.com/0xzvan) for the Web3 gaming community.
+
+---
