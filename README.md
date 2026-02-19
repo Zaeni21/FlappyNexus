@@ -56,7 +56,7 @@ The top 10 players each week will receive token rewards:
 
 ## Developer & Contributions
 
-Feel free to fork, clone, or submit a PR. Built by [@JAWIRNFT](https://twitter.com/JAWIRNFT) for the Web3 gaming community.
+Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://twitter.com/JAWIRNFT) for the Web3 gaming community.
 
 ---
 ## Tech Stack
