@@ -60,3 +60,32 @@ Play now: https://flappynexus.vercel.app/
 Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://x.com/0xzvan) for the Web3 gaming community.
 
 ---
+
+## Privy Backend Auth (Node.js)
+
+Untuk verifikasi auth token Privy secara aman (pakai `PRIVY_APP_SECRET` di server), gunakan backend kecil di folder `backend/` (tanpa dependency npm tambahan).
+
+### Setup
+
+```bash
+cd backend
+cp .env.example .env
+node privy-auth-server.js
+```
+
+### Endpoint
+
+- `GET /api/health`
+- `POST /api/privy/verify`
+
+Body:
+
+```json
+{
+  "identityToken": "<token-dari-privy-frontend>"
+}
+```
+
+> Jangan pernah simpan `PRIVY_APP_SECRET` di frontend.
+> Frontend FlappyNexus diarahkan memverifikasi sesi Privy ke endpoint backend `POST /api/privy/verify`.
+
