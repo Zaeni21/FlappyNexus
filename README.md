@@ -1,62 +1,68 @@
 # Flappy Nexus
 
-**Flappy Nexus** is a browser-based Web3 game featuring an onchain leaderboard. Players can choose to play in **offchain** or **onchain** mode, and submit their high scores directly to the blockchain!
+**Flappy Nexus** is a browser-based Web3 Flappy-style game with an on-chain leaderboard and optional staking flow.
 
 ## Features
 
-- **Connect Wallet**: Supports EVM wallets like MetaMask and OKX Wallet.
-- **Play Offchain**: Casual mode without blockchain interaction.
-- **Play Onchain**: Compete for the top score onchain.
-- **Submit Score**: Send your score to the smart contract.
-- **Leaderboard**: Displays the top 10 highest scoring players.
-- **Mint Skin**: (Optional) Allows players to mint and use NFT skins.
+- **Privy Session Login** for wallet access.
+- **Offchain Mode** for casual gameplay.
+- **Onchain Mode** to submit score to smart contract.
+- **Leaderboard** to view top players.
+- **NFT Mint** support for game skin flow.
+- **Stake Page** integrated with Privy wallet session.
 
-## How to Play
+## Play
 
-1. Open the site: https://flappynexus.vercel.app/
-2. Click **Connect Wallet** to start onchain mode.
-3. Choose **Play Onchain** or **Play Offchain**.
-4. After the game ends, click **Submit Score** to record your score.
-5. Open the **Leaderboard** to see your rank!
-
-## Smart Contract
-
-- **Network**: Testnet or Mainnet
-- **Contract Address**: `0x...` *(Replace with actual address)*
-- **Key Functions**:
-  - `submitScore(uint256 score)`
-  - `getTopPlayers()`
-
-## Weekly Rewards
-
-The top 10 players each week will receive token rewards:
-
-| Rank | Reward |
-|------|--------|
-| 1    | 20%    |
-| 2    | 15%    |
-| 3    | 13%    |
-| 4    | 11%    |
-| 5    | 10%    |
-| 6    | 9%     |
-| 7    | 7%     |
-| 8    | 6%     |
-| 9    | 5%     |
-| 10   | 4%     |
-
-> Rewards are distributed manually or via smart contract.
+1. Open: https://flappynexus.vercel.app/
+2. Login with Privy.
+3. Choose **Play Offchain** or **Play Onchain**.
+4. Submit score after game over (onchain mode).
+5. Open leaderboard to view ranking.
 
 ## Tech Stack
-- Frontend: HTML5 Canvas, JavaScript, TailwindCSS
-- Web3: Ethers.js v6 (update kalau masih v5)
-- Smart Contract: Solidity ^0.8.0 on Nexus Chain
-- Deploy: Vercel (https://flappynexus.vercel.app/)
 
-## Live Demo
-Play now: https://flappynexus.vercel.app/
+- Frontend: HTML5 Canvas + Vanilla JavaScript + TailwindCSS
+- Web3: Ethers.js v5
+- Auth: Privy
+- Backend verifier: Native Node.js (`http` / `https`)
 
-## Developer & Contributions
+## Privy Backend Auth (Node.js)
 
-Feel free to fork, clone, or submit a PR. Built by [@0xzvan](https://x.com/0xzvan) for the Web3 gaming community.
+Use the backend verifier to securely validate Privy identity tokens using server-side secrets.
 
----
+### Setup
+
+```bash
+cd backend
+cp .env.example .env
+node privy-auth-server.js
+```
+
+### Environment Variables
+
+- `PORT` (default: `8787`)
+- `PRIVY_APP_ID`
+- `PRIVY_APP_SECRET`
+- `PRIVY_VERIFY_URL` (optional, default: `https://auth.privy.io/api/v1/sessions/verify`)
+
+### Endpoints
+
+- `GET /api/health`
+- `POST /api/privy/verify`
+
+Request body:
+
+```json
+{
+  "identityToken": "<privy_identity_token>"
+}
+```
+
+### Security Notes
+
+- Never put `PRIVY_APP_SECRET` in frontend code.
+- Frontend should verify session through backend endpoint: `POST /api/privy/verify`.
+
+## Developer
+
+Built by [@0xzvan](https://x.com/0xzvan) for the Web3 gaming community.

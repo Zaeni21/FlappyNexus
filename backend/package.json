@@ -1,0 +1,11 @@
+{
+  "name": "flappy-nexus-privy-auth-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Node.js backend for verifying Privy auth tokens using app secret.",
+  "main": "privy-auth-server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node privy-auth-server.js"
+  }
+}
