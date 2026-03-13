@@ -30,6 +30,17 @@
 
 Use the backend verifier to securely validate Privy identity tokens using server-side secrets.
 
+### Frontend env for Vercel / Next.js migration
+
+If you deploy the frontend on Vercel (especially during Next.js migration), expose these as **public** env vars:
+
+- `NEXT_PUBLIC_PRIVY_APP_ID`
+- `NEXT_PUBLIC_PRIVY_CLIENT_ID` (optional)
+- `NEXT_PUBLIC_PRIVY_BACKEND_VERIFY_ENDPOINT` (optional, default `/api/privy/verify`)
+- `NEXT_PUBLIC_PRIVY_REQUIRE_BACKEND_VERIFY` (`true`/`false`, default `false`)
+
+Why: in browser runtime, non-public env vars are not available to client-side code.
+
 ### Setup
 
 ```bash
@@ -42,8 +53,29 @@ node privy-auth-server.js
 
 - `PORT` (default: `8787`)
 - `PRIVY_APP_ID`
-- `PRIVY_APP_SECRET`
-- `PRIVY_VERIFY_URL` (optional, default: `https://auth.privy.io/api/v1/sessions/verify`)
+- `PRIVY_APP_SECRET` (required if `PRIVY_VERIFY_MODE=privy-api`)
+- `PRIVY_VERIFY_MODE` (`privy-api` | `jwt-jwks` | `jwt-key`, recommended: `jwt-jwks`)
+- `PRIVY_JWKS_URL` (for `jwt-jwks`, default: `https://auth.privy.io/api/v1/apps/<PRIVY_APP_ID>/jwks.json`)
+- `PRIVY_VERIFICATION_KEY` (for `jwt-key`, paste full public key from Privy dashboard)
+- `PRIVY_VERIFY_URL` (optional for `privy-api`, default: `https://auth.privy.io/api/v1/sessions/verify`)
+
+### JWKS / Public key masukin kemana?
+
+Kalau dari dashboard Privy kamu lihat ini:
+
+- JWKS endpoint: `https://auth.privy.io/api/v1/apps/cmmnuhuc601up0dlbr16yfolt/jwks.json`
+- Public key: `-----BEGIN PUBLIC KEY----- ... -----END PUBLIC KEY-----`
+
+Masukinnya ke **backend env**, bukan frontend:
+
+- **Recommended (otomatis rotate key):**
+  - `PRIVY_VERIFY_MODE=jwt-jwks`
+  - `PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/cmmnuhuc601up0dlbr16yfolt/jwks.json`
+- **Alternatif (manual key):**
+  - `PRIVY_VERIFY_MODE=jwt-key`
+  - `PRIVY_VERIFICATION_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"`
+
+Di Vercel: **Project → Settings → Environment Variables** (scope backend/api runtime). Jangan expose key ini ke `NEXT_PUBLIC_*`.
 
 ### Endpoints
 
