@@ -34,7 +34,6 @@ function loadDotEnv() {
 }
 
 loadDotEnv();
-
 const PORT = Number(process.env.PORT || 8787);
 const PRIVY_APP_ID = process.env.PRIVY_APP_ID || "";
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET || "";

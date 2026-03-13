@@ -7,73 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://auth.privy.io/js/auth.js"></script>
-  <style>
-    :root {
-      --ui-bg: rgba(10, 10, 20, 0.76);
-      --ui-border: rgba(255, 255, 255, 0.12);
-      --ui-glow: 0 10px 25px rgba(0, 0, 0, 0.35);
-    }
-
-    body {
-      background: radial-gradient(circle at 20% 20%, #2d1a4f, #06060c 55%);
-    }
-
-    .stars {
-      position: fixed;
-      inset: 0;
-      background: transparent url('https://cdn.pixabay.com/photo/2017/07/17/22/24/stars-2514311_1280.png') repeat;
-      background-size: cover;
-      animation: moveStars 60s linear infinite;
-      z-index: 0;
-      opacity: 0.28;
-    }
-
-    .glass-panel {
-      background: var(--ui-bg);
-      border: 1px solid var(--ui-border);
-      box-shadow: var(--ui-glow);
-      backdrop-filter: blur(8px);
-    }
-
-    .menu-btn {
-      transition: transform .18s ease, box-shadow .2s ease;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, .2);
-    }
-
-    .menu-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 22px rgba(0, 0, 0, .28);
-    }
-
-    .hero-float {
-      animation: heroFloat 2.4s ease-in-out infinite;
-    }
-
-    .score-pill {
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      font-size: .78rem;
-    }
-
-    .toast {
-      animation: fadeUp .35s ease;
-    }
-
-    @keyframes moveStars {
-      from { background-position: 0 0; }
-      to { background-position: -1000px 1000px; }
-    }
-
-    @keyframes heroFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    @keyframes fadeUp {
-      from { transform: translateY(6px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-  </style>
+    <link rel="stylesheet" href="assets/css/main.css" />
 </head>
 <body class="text-white min-h-screen font-sans relative overflow-hidden">
   <div id="star-bg" class="stars"></div>
@@ -166,28 +100,11 @@
       </a>
     </div>
   </footer>
-
   <audio id="bg-music" src="https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeifokiywb2vpbbuwifddxxyr6kxft7bo4j3isoojfdgox7v6tcer7q" loop hidden></audio>
 
-  <script>
-    const contractAddress = "0xFeAEe9a44e45F4a8275BffCCC5E03b712aA407D0";
-    const adminAddress = "0x58c5796edc7001b949693cc2655D190db54c271F";
-    const flappyNftAddress = "0xAA66da7322Aa663EFC4594C4825eB82E8D400021";
-    const chainConfig = {
-      chainId: "0xf64",
-      chainName: "Nexus Tesnet",
-      rpcUrls: ["https://nexus-testnet.g.alchemy.com/public"],
-      nativeCurrency: { name: "NEX Token", symbol: "NEX", decimals: 18 },
-      blockExplorerUrls: ["https://testnet3.explorer.nexus.xyz"]
-    };
-
-    const abi = [
-      { inputs: [], name: "distributeRewards", outputs: [], stateMutability: "payable", type: "function" },
-      {
-        inputs: [],
-        name: "getTopPlayers",
-        outputs: [{
-          components: [
+    <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
             { internalType: "address", name: "addr", type: "address" },
             { internalType: "uint256", name: "score", type: "uint256" }
           ],

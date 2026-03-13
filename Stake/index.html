@@ -18,8 +18,10 @@
           <p class="text-gray-500">Wallet</p>
           <p id="walletAddress" class="font-mono">-</p>
         </div>
-        <div class="space-x-2">
-          <span id="walletStatus" class="text-amber-600 font-medium">Privy session required</span>
+        <div class="space-x-2 text-right">
+          <span id="walletStatus" class="text-green-600 font-medium hidden">Connected via Privy</span>
+          <p id="sessionHint" class="text-xs text-gray-500">Checking Privy session…</p>
+        </div>
         </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
@@ -71,6 +73,32 @@
 
   const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
   const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
+  const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
+  let privyClient = null;
+
+  async function waitForPrivySdk(maxWaitMs = 6000) {
+    const started = Date.now();
+    while (Date.now() - started < maxWaitMs) {
+      if (window.Privy && typeof window.Privy.create === "function") return;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    throw new Error("Privy SDK failed to load.");
+  }
+
+  async function initPrivy() {
+    if (privyClient) return privyClient;
+    if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
+    await waitForPrivySdk();
+    privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
+    return privyClient;
+  }
+
+  const privyReadyPromise = initPrivy().catch(error => {
+      console.error("Privy init error:", error?.message || error);
+      throw error;
+    });
+
+  const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
 
   const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
@@ -281,58 +309,89 @@ const contractBalance = await provider.getBalance(contractAddress);
 document.getElementById("poolBalance").textContent =
   parseFloat(ethers.utils.formatEther(contractBalance)).toFixed(2);
 }
-  async function initPrivyStakeSession() {
-    if (!window.Privy || typeof window.Privy.create !== "function") {
-      throw new Error("Privy SDK belum termuat di halaman Stake.");
-    }
+}
+  async function applyPrivyStakeSession(privy) {
+    const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
+    if (!providerFromPrivy) throw new Error("Privy wallet provider is unavailable.");
 
-    if (!PRIVY_APP_ID) {
-      throw new Error("PRIVY_APP_ID belum diset.");
-    }
-
-    privyClient = privyClient || window.Privy.create({
-      appId: PRIVY_APP_ID,
-      clientId: PRIVY_CLIENT_ID || undefined
-    });
-
-    const user = privyClient.user || (typeof privyClient.getUser === "function" ? await privyClient.getUser() : null);
-    const privyAddress = user?.wallet?.address || "";
-
-    if (!privyAddress) {
-      throw new Error("Session Privy tidak ditemukan. Login dulu dari landing page.");
-    }
-
-    const privyProvider = await privyClient?.wallets?.ethereum?.getProvider?.();
-    if (!privyProvider) {
-      throw new Error("Provider Privy tidak tersedia. Silakan login ulang dari landing page.");
-    }
-
-    provider = new ethers.providers.Web3Provider(privyProvider);
+    provider = new ethers.providers.Web3Provider(providerFromPrivy);
     signer = provider.getSigner();
-    const signerAddress = await signer.getAddress();
-    walletAddress = signerAddress || privyAddress;
+
+    walletAddress = privy?.user?.wallet?.address;
+    if (!walletAddress) throw new Error("Privy session has no wallet address.");
     contract = new ethers.Contract(contractAddress, abi, signer);
 
-    document.getElementById("walletAddress").textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-    document.getElementById("walletStatus").textContent = "Privy session active";
-    document.getElementById("walletStatus").className = "text-green-600 font-medium";
+    document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
 
     await updateUI();
     setMode(mode);
   }
+  async function tryRestorePrivyStakeSession() {
+    const hint = document.getElementById("sessionHint");
+    const status = document.getElementById("walletStatus");
 
-  window.addEventListener("load", async () => {
     try {
-      await initPrivyStakeSession();
-    } catch (error) {
-      console.error("[stake] privy init failed", error);
-      document.getElementById("walletStatus").textContent = "Privy session unavailable";
-      document.getElementById("walletStatus").className = "text-red-600 font-medium";
-      document.getElementById("walletAddress").textContent = "Login from landing page";
-      document.getElementById("walletBalance").textContent = "Balance: -";
+      const privy = await privyReadyPromise;
+      const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
+      const existingAddress = privy?.user?.wallet?.address;
+
+      if (!providerFromPrivy || !existingAddress) {
+        hint.textContent = "No active Privy session. Please login from landing page first.";
+        status.classList.add("hidden");
+        return;
+      }
+
+      await applyPrivyStakeSession(privy);
+      status.classList.remove("hidden");
+      hint.textContent = "Wallet auto-connected from Privy session.";
+    } catch (err) {
+      console.warn("Stake session restore skipped:", err?.message || err);
+      hint.textContent = "Failed to restore Privy session.";
+      status.classList.add("hidden");
+    }
+  }
+
+  function setMode(selected) {
+    mode = selected;
+    document.getElementById('stakeBtn').className =
+      selected === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+    document.getElementById('unstakeBtn').className =
+      selected === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
+
+    const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
+    document.getElementById("amount").style.display = showForm ? "block" : "none";
+    document.getElementById("slider").style.display = showForm ? "block" : "none";
+    document.getElementById("percentageText").style.display = showForm ? "block" : "none";
+
+    if (mode === 'unstake') {
+      document.getElementById("amount").value = totalStaked.toFixed(2);
     }
   });
 
+  async function confirmAction() {
+    const amount = parseFloat(document.getElementById("amount").value);
+    if (!walletAddress) return alert("No active wallet session. Login on landing page first.");
+    if (!amount || amount <= 0) return alert("Enter valid amount.");
+
+    const value = ethers.utils.parseEther(amount.toString());
+    const tx = mode === "stake"
+      ? await contract.stake({ value })
+      : await contract.unstake(value);
+
+    const receipt = await tx.wait();
+
+const txBox = document.getElementById("txHashMsg");
+const txLink = document.getElementById("txLink");
+txLink.href = `https://testnet3.explorer.nexus.xyz/tx/${receipt.transactionHash}`;
+txBox.classList.remove("hidden");
+setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
+
+updateUI();
+  }
+
+  window.onload = () => {
+    tryRestorePrivyStakeSession();
+  };
   const slider = document.getElementById("slider");
 const amountInput = document.getElementById("amount");
 const percentageText = document.getElementById("percentageText");
@@ -351,7 +410,8 @@ amountInput.addEventListener("input", () => {
   percentageText.textContent = `${slider.value}%`;
 });
   async function claimRewards() {
-  if (!walletAddress) return alert("Privy session belum aktif. Login dari landing page.");
+  async function claimRewards() {
+  if (!walletAddress) return alert("No active wallet session. Login on landing page first.");
   try {
     const tx = await contract.claimReward();
     const receipt = await tx.wait();
@@ -363,7 +423,7 @@ txLink.href = `https://testnet3.explorer.nexus.xyz/tx/${receipt.transactionHash}
 txBox.classList.remove("hidden");
 setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 
-    // Tambahkan delay 1 detik sebelum refresh UI
+    // Add a short delay before refreshing UI
     setTimeout(updateUI, 1000);
   } catch (err) {
     alert("Claim failed: " + err.message);
@@ -373,7 +433,10 @@ setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 async function depositRewards() {
   const admin = "0x58c5796edc7001b949693cc2655d190db54c271f";
   if (!walletAddress) {
-    alert("Privy session belum aktif. Login dari landing page.");
+  if (!walletAddress) {
+    alert("No active wallet session. Login on landing page first.");
+    return;
+  }
     return;
   }
 
