@@ -1,0 +1,13 @@
+export const gameCanvas = document.getElementById("gameCanvas");
+export const gameCtx = gameCanvas.getContext("2d");
+export const scoreEl = document.getElementById("score");
+export const hudEl = document.getElementById("hud");
+export const walletTextEl = document.getElementById("wallet-text");
+export const walletStatusEl = document.getElementById("wallet-status");
+export const walletPopupEl = document.getElementById("walletPopup");
+export const modeSelectionEl = document.getElementById("mode-selection");
+export const starBgEl = document.getElementById("star-bg");
+export const starfieldEl = document.getElementById("starfield");
+export const socialFooterEl = document.getElementById("social-footer");
+export const toastEl = document.getElementById("toast");
+export const bgMusicEl = document.getElementById("bg-music");
