@@ -7,5 +7,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node privy-auth-server.js"
+  },
+  "dependencies": {
+    "@privy-io/node": "^0.10.1",
+    "@privy-io/server-auth": "^1.32.5"
   }
 }
