@@ -3,8 +3,20 @@ import { gameState } from "./state.js";
 import { walletPopupEl } from "./dom.js";
 import { setLanguage, showToast, updateWalletStatus } from "./ui.js";
 
-// Load Privy SDK via CDN
-import Privy from "https://unpkg.com/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs";
+// Dynamic import for Privy SDK
+let Privy = null;
+
+async function loadPrivy() {
+  if (Privy) return Privy;
+  try {
+    const module = await import("https://unpkg.com/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs");
+    Privy = module.default;
+    return Privy;
+  } catch (error) {
+    console.warn("Failed to load Privy SDK:", error);
+    return null;
+  }
+}
 
 const { ethers } = window;
 const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
@@ -15,14 +27,17 @@ let privyClient = null;
 
 function ensurePrivyGlobal() {
   if (window.Privy && typeof window.Privy.create === "function") return;
-  window.Privy = {
-    create: (opts) => new Privy(opts),
-  };
+  if (Privy) {
+    window.Privy = {
+      create: (opts) => new Privy(opts),
+    };
+  }
 }
 
 async function initPrivy() {
   if (privyClient) return privyClient;
   if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
+  await loadPrivy();
   ensurePrivyGlobal();
 
   try {
