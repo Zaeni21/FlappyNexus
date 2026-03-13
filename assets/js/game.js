@@ -14,6 +14,10 @@ export function resizeCanvases() {
 function drawBird() {
   if (birdImage.complete) {
     gameCtx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+  } else {
+    // Draw placeholder rectangle if image not loaded
+    gameCtx.fillStyle = "yellow";
+    gameCtx.fillRect(bird.x, bird.y, bird.width, bird.height);
   }
 }
 
@@ -22,6 +26,11 @@ function drawPipes() {
     if (pipeImage.complete) {
       gameCtx.drawImage(pipeImage, pipe.x, 0, pipeWidth, pipe.top);
       gameCtx.drawImage(pipeImage, pipe.x, gameCanvas.height - pipe.bottom, pipeWidth, pipe.bottom);
+    } else {
+      // Draw placeholder rectangles if image not loaded
+      gameCtx.fillStyle = "green";
+      gameCtx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+      gameCtx.fillRect(pipe.x, gameCanvas.height - pipe.bottom, pipeWidth, pipe.bottom);
     }
   });
 }

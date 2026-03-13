@@ -3,8 +3,8 @@ import { gameState } from "./state.js";
 import { walletPopupEl } from "./dom.js";
 import { setLanguage, showToast, updateWalletStatus } from "./ui.js";
 
-// Load Privy SDK via CDN (fixes broken auth.privy.io host and adblock issues)
-import Privy from "https://cdn.jsdelivr.net/npm/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs";
+// Load Privy SDK via CDN
+import Privy from "https://unpkg.com/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs";
 
 const { ethers } = window;
 const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
