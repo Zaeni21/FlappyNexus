@@ -6,16 +6,26 @@ import { setLanguage, showToast, updateWalletStatus } from "./ui.js";
 // Dynamic import for Privy SDK
 let Privy = null;
 
+const PRIVY_SDK_CDN_URLS = [
+  "https://cdn.jsdelivr.net/npm/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs",
+  "https://unpkg.com/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs",
+  "https://esm.sh/@privy-io/js-sdk-core@0.60.5"
+];
+
 async function loadPrivy() {
   if (Privy) return Privy;
-  try {
-    const module = await import("https://unpkg.com/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs");
-    Privy = module.default;
-    return Privy;
-  } catch (error) {
-    console.warn("Failed to load Privy SDK:", error);
-    return null;
+
+  for (const sdkUrl of PRIVY_SDK_CDN_URLS) {
+    try {
+      const module = await import(sdkUrl);
+      Privy = module.default;
+      return Privy;
+    } catch (error) {
+      console.warn(`Failed to load Privy SDK from ${sdkUrl}:`, error);
+    }
   }
+
+  return null;
 }
 
 const { ethers } = window;
@@ -74,10 +84,13 @@ async function getPrivyWalletProvider(privy) {
 }
 
 async function connectPrivy(privy) {
+  // Explicit login ensures Privy modal is shown for new users.
+  const loginResult = typeof privy.login === "function" ? await privy.login() : null;
+
   const provider = await getPrivyWalletProvider(privy);
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   const address = Array.isArray(accounts) ? accounts[0] : null;
-  const identityToken = await privy.getIdentityToken();
+  const identityToken = getPrivyIdentityToken(loginResult, privy) || (await privy.getIdentityToken?.());
 
   return {
     wallet: { address },
