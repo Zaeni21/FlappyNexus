@@ -19,12 +19,34 @@ async function waitForPrivySdk(maxWaitMs = 10000) {
   return false;
 }
 
+async function loadPrivyScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Privy) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://auth.privy.io/js/auth.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Privy script'));
+    document.head.appendChild(script);
+  });
+}
+
 async function initPrivy() {
   if (privyClient) return privyClient;
   if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
-  const sdkLoaded = await waitForPrivySdk();
+  let sdkLoaded = await waitForPrivySdk();
   if (!sdkLoaded) {
-    console.warn("Privy SDK failed to load. Onchain features will be disabled.");
+    try {
+      await loadPrivyScript();
+      sdkLoaded = await waitForPrivySdk(5000); // wait another 5s
+    } catch (error) {
+      console.warn('Failed to load Privy script dynamically:', error);
+    }
+  }
+  if (!sdkLoaded) {
+    console.warn("Privy SDK failed to load. Onchain features will be disabled. Check ad blocker.");
     return null;
   }
   privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
@@ -111,7 +133,7 @@ export async function connectWallet() {
   try {
     const privy = await privyReadyPromise;
     if (!privy) {
-      showToast("Privy SDK not loaded. Please refresh the page.", "error");
+      showToast("Privy SDK not loaded. Please disable ad blocker or refresh the page.", "error");
       return;
     }
     const loginResult = await privy.login();
