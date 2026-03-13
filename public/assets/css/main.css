@@ -1,0 +1,82 @@
+:root {
+  --ui-bg: rgba(10, 10, 20, 0.76);
+  --ui-border: rgba(255, 255, 255, 0.12);
+  --ui-glow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+body {
+  background: radial-gradient(circle at 20% 20%, #2d1a4f, #06060c 55%);
+}
+
+.stars {
+  position: fixed;
+  inset: 0;
+  background: transparent url('https://cdn.pixabay.com/photo/2017/07/17/22/24/stars-2514311_1280.png') repeat;
+  background-size: cover;
+  animation: moveStars 60s linear infinite;
+  z-index: 0;
+  opacity: 0.28;
+}
+
+.glass-panel {
+  background: rgba(8, 10, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: var(--ui-glow);
+  backdrop-filter: blur(10px);
+}
+
+.nexus-btn {
+  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  color: #fff;
+}
+
+.nexus-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.nexus-btn:active {
+  transform: translateY(0);
+}
+
+.menu-btn {
+  transition: transform .18s ease, box-shadow .2s ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, .2);
+}
+
+.menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 22px rgba(0, 0, 0, .28);
+}
+
+.hero-float {
+  animation: heroFloat 2.4s ease-in-out infinite;
+}
+
+.score-pill {
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .78rem;
+}
+
+.toast {
+  animation: fadeUp .35s ease;
+}
+
+@keyframes moveStars {
+  from { background-position: 0 0; }
+  to { background-position: -1000px 1000px; }
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeUp {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
