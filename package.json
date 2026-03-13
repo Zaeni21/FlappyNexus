@@ -1,0 +1,14 @@
+{
+  "name": "flappy-nexus-frontend",
+  "version": "1.0.0",
+  "description": "Flappy Nexus frontend with Privy authentication",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'No build step required for vanilla JS'"
+  },
+  "dependencies": {
+    "@privy-io/js-sdk-core": "^0.60.5",
+    "@privy-io/node": "^0.10.1"
+  }
+}
