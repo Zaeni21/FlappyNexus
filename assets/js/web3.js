@@ -10,7 +10,7 @@ const PRIVY_BACKEND_VERIFY_ENDPOINT = "/api/privy/verify";
 
 let privyClient = null;
 
-async function waitForPrivySdk(maxWaitMs = 6000) {
+async function waitForPrivySdk(maxWaitMs = 10000) {
   const started = Date.now();
   while (Date.now() - started < maxWaitMs) {
     if (window.Privy && typeof window.Privy.create === "function") return;
