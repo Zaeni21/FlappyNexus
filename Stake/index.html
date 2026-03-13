@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://auth.privy.io/js/auth.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
@@ -18,10 +19,7 @@
           <p id="walletAddress" class="font-mono">-</p>
         </div>
         <div class="space-x-2">
-          <span id="walletStatus">
-            <span id="connectBtn" class="text-blue-600 font-medium cursor-pointer" onclick="connectWallet()">Connect</span>
-            <span id="disconnectBtn" class="text-red-600 font-medium cursor-pointer hidden" onclick="disconnectWallet()">Disconnect</span>
-          </span>
+          <span id="walletStatus" class="text-amber-600 font-medium">Privy session required</span>
         </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
@@ -67,9 +65,12 @@
     <p class="text-center text-xs text-gray-400 mt-6">Built by 0xzvan with love for degen culture</p>
   </div>
 <script>
-  let provider, signer, walletAddress, contract;
+  let provider, signer, walletAddress, contract, privyClient;
   let balance = 0, totalStaked = 0;
   let mode = "stake";
+
+  const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
+  const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
 
   const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
@@ -280,98 +281,58 @@ const contractBalance = await provider.getBalance(contractAddress);
 document.getElementById("poolBalance").textContent =
   parseFloat(ethers.utils.formatEther(contractBalance)).toFixed(2);
 }
-  async function connectWallet() {
-    if (!window.ethereum) return alert("Please install MetaMask or OKX Wallet");
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+  async function initPrivyStakeSession() {
+    if (!window.Privy || typeof window.Privy.create !== "function") {
+      throw new Error("Privy SDK belum termuat di halaman Stake.");
+    }
 
-    await provider.send("wallet_addEthereumChain", [{
-      chainId: '0xf64',
-      chainName: 'Nexus Tesnet',
-      rpcUrls: ['https://nexus-testnet.g.alchemy.com/public'],
-      nativeCurrency: { name: 'NEX Token', symbol: 'NEX', decimals: 18 },
-      blockExplorerUrls: ['https://testnet3.explorer.nexus.xyz']
-    }]);
+    if (!PRIVY_APP_ID) {
+      throw new Error("PRIVY_APP_ID belum diset.");
+    }
 
-    await provider.send("eth_requestAccounts", []);
+    privyClient = privyClient || window.Privy.create({
+      appId: PRIVY_APP_ID,
+      clientId: PRIVY_CLIENT_ID || undefined
+    });
+
+    const user = privyClient.user || (typeof privyClient.getUser === "function" ? await privyClient.getUser() : null);
+    const privyAddress = user?.wallet?.address || "";
+
+    if (!privyAddress) {
+      throw new Error("Session Privy tidak ditemukan. Login dulu dari landing page.");
+    }
+
+    const privyProvider = await privyClient?.wallets?.ethereum?.getProvider?.();
+    if (!privyProvider) {
+      throw new Error("Provider Privy tidak tersedia. Silakan login ulang dari landing page.");
+    }
+
+    provider = new ethers.providers.Web3Provider(privyProvider);
     signer = provider.getSigner();
-    walletAddress = await signer.getAddress();
+    const signerAddress = await signer.getAddress();
+    walletAddress = signerAddress || privyAddress;
     contract = new ethers.Contract(contractAddress, abi, signer);
 
-    document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
-    document.getElementById("connectBtn").classList.add("hidden");
-    document.getElementById("disconnectBtn").classList.remove("hidden");
+    document.getElementById("walletAddress").textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+    document.getElementById("walletStatus").textContent = "Privy session active";
+    document.getElementById("walletStatus").className = "text-green-600 font-medium";
 
-    const rawBal = await provider.getBalance(walletAddress);
-    balance = parseFloat(ethers.utils.formatEther(rawBal));
-    document.getElementById("walletBalance").textContent = `Balance: ${balance.toFixed(2)} NEX`;
-
-    const staked = await contract.getStakedAmount(walletAddress);
-    const reward = await contract.pendingReward(walletAddress);
-    totalStaked = parseFloat(ethers.utils.formatEther(staked));
-
-    document.getElementById("totalStaked").textContent = totalStaked.toFixed(2) + " NEX";
-    document.getElementById("pendingRewards").textContent = parseFloat(ethers.utils.formatEther(reward)).toFixed(2) + " NEX";
-
+    await updateUI();
     setMode(mode);
   }
 
-  function disconnectWallet() {
-    provider = null;
-    signer = null;
-    walletAddress = null;
-    balance = 0;
-
-    document.getElementById("walletAddress").textContent = "-";
-    document.getElementById("walletBalance").textContent = "Balance: -";
-    document.getElementById("connectBtn").classList.remove("hidden");
-    document.getElementById("disconnectBtn").classList.add("hidden");
-
-    document.getElementById("amount").style.display = "none";
-    document.getElementById("slider").style.display = "none";
-    document.getElementById("percentageText").style.display = "none";
-  }
-
-  function setMode(selected) {
-    mode = selected;
-    document.getElementById('stakeBtn').className =
-      selected === 'stake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
-    document.getElementById('unstakeBtn').className =
-      selected === 'unstake' ? "bg-gray-900 text-white py-2 rounded" : "bg-gray-200 text-gray-800 py-2 rounded";
-
-    const showForm = (mode === 'stake') || (mode === 'unstake' && totalStaked > 0);
-    document.getElementById("amount").style.display = showForm ? "block" : "none";
-    document.getElementById("slider").style.display = showForm ? "block" : "none";
-    document.getElementById("percentageText").style.display = showForm ? "block" : "none";
-
-    if (mode === 'unstake') {
-      document.getElementById("amount").value = totalStaked.toFixed(2);
+  window.addEventListener("load", async () => {
+    try {
+      await initPrivyStakeSession();
+    } catch (error) {
+      console.error("[stake] privy init failed", error);
+      document.getElementById("walletStatus").textContent = "Privy session unavailable";
+      document.getElementById("walletStatus").className = "text-red-600 font-medium";
+      document.getElementById("walletAddress").textContent = "Login from landing page";
+      document.getElementById("walletBalance").textContent = "Balance: -";
     }
-  }
+  });
 
-  async function confirmAction() {
-    const amount = parseFloat(document.getElementById("amount").value);
-    if (!walletAddress) return alert("Please connect wallet.");
-    if (!amount || amount <= 0) return alert("Enter valid amount.");
-
-    const value = ethers.utils.parseEther(amount.toString());
-    const tx = mode === "stake"
-      ? await contract.stake({ value })
-      : await contract.unstake(value);
-
-    const receipt = await tx.wait();
-
-const txBox = document.getElementById("txHashMsg");
-const txLink = document.getElementById("txLink");
-txLink.href = `https://testnet3.explorer.nexus.xyz/tx/${receipt.transactionHash}`;
-txBox.classList.remove("hidden");
-setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
-
-updateUI();
-  }
-
-  window.onload = () => {
-    document.getElementById("connectBtn").addEventListener("click", connectWallet);
-  };
   const slider = document.getElementById("slider");
 const amountInput = document.getElementById("amount");
 const percentageText = document.getElementById("percentageText");
@@ -390,7 +351,7 @@ amountInput.addEventListener("input", () => {
   percentageText.textContent = `${slider.value}%`;
 });
   async function claimRewards() {
-  if (!walletAddress) return alert("Connect your wallet first.");
+  if (!walletAddress) return alert("Privy session belum aktif. Login dari landing page.");
   try {
     const tx = await contract.claimReward();
     const receipt = await tx.wait();
@@ -412,7 +373,7 @@ setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 async function depositRewards() {
   const admin = "0x58c5796edc7001b949693cc2655d190db54c271f";
   if (!walletAddress) {
-    alert("Please connect your wallet.");
+    alert("Privy session belum aktif. Login dari landing page.");
     return;
   }
 
