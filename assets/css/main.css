@@ -19,10 +19,27 @@ body {
 }
 
 .glass-panel {
-  background: var(--ui-bg);
-  border: 1px solid var(--ui-border);
+  background: rgba(8, 10, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   box-shadow: var(--ui-glow);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+}
+
+.nexus-btn {
+  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  color: #fff;
+}
+
+.nexus-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.nexus-btn:active {
+  transform: translateY(0);
 }
 
 .menu-btn {

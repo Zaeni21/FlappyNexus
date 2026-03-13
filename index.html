@@ -14,25 +14,42 @@
   <canvas id="starfield" class="fixed inset-0 w-full h-full z-10"></canvas>
   <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-20"></canvas>
 
-  <div class="absolute top-4 right-4 z-50">
-    <div id="walletDisplay" class="glass-panel flex items-center space-x-2 px-3 py-2 rounded-full cursor-pointer">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-2.79M16 12h2" />
-      </svg>
-      <div id="wallet-status" class="w-2.5 h-2.5 bg-gray-500 rounded-full"></div>
-      <span id="wallet-text" class="text-sm font-medium" data-i18n="wallet_connect">Connect Privy</span>
-    </div>
+  <header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-lg bg-black/40 border-b border-white/10">
+    <a href="/" class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-400 flex items-center justify-center shadow-xl">
+        <span class="text-sm font-bold">FN</span>
+      </div>
+      <div class="text-white font-bold text-lg">Flappy Nexus</div>
+    </a>
 
-    <div id="walletPopup" class="glass-panel absolute right-0 mt-2 p-3 rounded hidden z-50 min-w-max">
-      <p class="text-green-300 text-sm mb-2">Connected</p>
-      <button id="disconnectBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 text-xs rounded font-semibold">Disconnect</button>
-    </div>
-  </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-2">
+        <button id="lang-en" class="nexus-btn px-3 py-1 text-xs rounded-full">EN</button>
+        <button id="lang-id" class="nexus-btn px-3 py-1 text-xs rounded-full">ID</button>
+      </div>
 
-    <div class="fixed top-16 right-4 z-50 flex justify-end gap-2">
-      <button id="lang-en" class="glass-panel px-3 py-1 rounded text-xs font-semibold">EN</button>
-      <button id="lang-id" class="glass-panel px-3 py-1 rounded text-xs font-semibold">ID</button>
+      <div id="walletDisplay" class="nexus-btn flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-2.79M16 12h2" />
+        </svg>
+        <div id="wallet-status" class="w-2.5 h-2.5 bg-gray-500 rounded-full"></div>
+        <span id="wallet-text" class="text-sm font-medium" data-i18n="wallet_connect">Connect Privy</span>
+      </div>
+
+      <div id="walletPopup" class="glass-panel absolute right-6 top-16 mt-2 p-3 rounded hidden z-50 min-w-max">
+        <p class="text-green-300 text-sm mb-2">Connected</p>
+        <button id="disconnectBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 text-xs rounded font-semibold">Disconnect</button>
+      </div>
     </div>
+  </header>
+
+  <section id="mode-selection" class="absolute top-[calc(50%+40px)] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-xl">
+    <div class="glass-panel rounded-2xl p-6 md:p-8 text-center space-y-6">
+      <div>
+        <p class="text-purple-300 tracking-widest text-xs mb-2"><span data-i18n="tagline">WEB3 ARCADE EXPERIENCE</span></p>
+        <h1 class="text-4xl md:text-5xl font-extrabold">Flappy Nexus</h1>
+        <p class="text-gray-300 mt-2 text-sm" data-i18n="subtitle">Build score setinggi mungkin, lalu submit ke onchain leaderboard.</p>
+      </div>
 
   <section id="mode-selection" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 w-11/12 max-w-xl">
     <div class="glass-panel rounded-2xl p-6 md:p-8 text-center space-y-6">
