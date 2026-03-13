@@ -305,15 +305,15 @@ const contractBalance = await provider.getBalance(contractAddress);
 document.getElementById("poolBalance").textContent =
   parseFloat(ethers.utils.formatEther(contractBalance)).toFixed(2);
 }
-  async function applyPrivyStakeSession(privy, loginResult = null) {
+  async function applyPrivyStakeSession(privy) {
     const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
     if (!providerFromPrivy) throw new Error("Privy wallet provider is unavailable.");
 
     provider = new ethers.providers.Web3Provider(providerFromPrivy);
     signer = provider.getSigner();
 
-    const connectedAddress = loginResult?.wallet?.address || privy?.user?.wallet?.address;
-    walletAddress = connectedAddress || await signer.getAddress();
+    walletAddress = privy?.user?.wallet?.address;
+    if (!walletAddress) throw new Error("Privy session has no wallet address.");
     contract = new ethers.Contract(contractAddress, abi, signer);
 
     document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
@@ -336,7 +336,7 @@ document.getElementById("poolBalance").textContent =
         return;
       }
 
-      await applyPrivyStakeSession(privy, { wallet: { address: existingAddress } });
+      await applyPrivyStakeSession(privy);
       status.classList.remove("hidden");
       hint.textContent = "Wallet auto-connected from Privy session.";
     } catch (err) {

@@ -9,7 +9,7 @@
 - **Onchain Mode** to submit score to smart contract.
 - **Leaderboard** to view top players.
 - **NFT Mint** support for game skin flow.
-- **Stake Page** integrated with Privy wallet session.
+- **Stake Page** auto-connects wallet from existing Privy session (no manual connect button).
 
 ## Play
 
