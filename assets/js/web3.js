@@ -13,16 +13,20 @@ let privyClient = null;
 async function waitForPrivySdk(maxWaitMs = 10000) {
   const started = Date.now();
   while (Date.now() - started < maxWaitMs) {
-    if (window.Privy && typeof window.Privy.create === "function") return;
+    if (window.Privy && typeof window.Privy.create === "function") return true;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  throw new Error("Privy SDK failed to load.");
+  return false;
 }
 
 async function initPrivy() {
   if (privyClient) return privyClient;
   if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
-  await waitForPrivySdk();
+  const sdkLoaded = await waitForPrivySdk();
+  if (!sdkLoaded) {
+    console.warn("Privy SDK failed to load. Onchain features will be disabled.");
+    return null;
+  }
   privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
   return privyClient;
 }
@@ -91,6 +95,7 @@ async function applyPrivySession(privy, loginResult = null) {
 export async function tryRestorePrivySession() {
   try {
     const privy = await privyReadyPromise;
+    if (!privy) return; // Privy not loaded
     const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
     const existingAddress = privy?.user?.wallet?.address;
     if (!providerFromPrivy || !existingAddress) return;
@@ -105,6 +110,10 @@ export async function tryRestorePrivySession() {
 export async function connectWallet() {
   try {
     const privy = await privyReadyPromise;
+    if (!privy) {
+      showToast("Privy SDK not loaded. Please refresh the page.", "error");
+      return;
+    }
     const loginResult = await privy.login();
     await applyPrivySession(privy, loginResult);
     showToast("Privy connected. Ready for onchain play!", "success");
