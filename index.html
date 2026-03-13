@@ -246,7 +246,7 @@
     // IMPORTANT: Never expose Privy app secret in frontend code.
     // Keep it only on secure backend / server environment variables.
     const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
-    const PRIVY_BACKEND_VERIFY_ENDPOINT = "/api/privy/verify";
+    const PRIVY_BACKEND_VERIFY_ENDPOINT = (window.PRIVY_BACKEND_VERIFY_ENDPOINT || `${window.location.origin}/api/privy/verify`).trim();
     let privyClient = null;
 
     const translations = {
