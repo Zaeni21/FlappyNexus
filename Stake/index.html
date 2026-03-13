@@ -22,6 +22,7 @@
           <span id="walletStatus" class="text-green-600 font-medium hidden">Connected via Privy</span>
           <p id="sessionHint" class="text-xs text-gray-500">Checking Privy session…</p>
         </div>
+        </div>
       </div>
       <p id="walletBalance" class="text-sm text-gray-500 mt-1">Balance: -</p>
 <div class="text-center text-sm text-gray-500 mb-2">
@@ -66,11 +67,12 @@
     <p class="text-center text-xs text-gray-400 mt-6">Built by 0xzvan with love for degen culture</p>
   </div>
 <script>
-  let provider, signer, walletAddress, contract;
+  let provider, signer, walletAddress, contract, privyClient;
   let balance = 0, totalStaked = 0;
   let mode = "stake";
 
   const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
+  const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
   const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
   let privyClient = null;
 
@@ -95,6 +97,8 @@
       console.error("Privy init error:", error?.message || error);
       throw error;
     });
+
+  const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
 
   const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
@@ -305,6 +309,7 @@ const contractBalance = await provider.getBalance(contractAddress);
 document.getElementById("poolBalance").textContent =
   parseFloat(ethers.utils.formatEther(contractBalance)).toFixed(2);
 }
+}
   async function applyPrivyStakeSession(privy) {
     const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
     if (!providerFromPrivy) throw new Error("Privy wallet provider is unavailable.");
@@ -361,7 +366,7 @@ document.getElementById("poolBalance").textContent =
     if (mode === 'unstake') {
       document.getElementById("amount").value = totalStaked.toFixed(2);
     }
-  }
+  });
 
   async function confirmAction() {
     const amount = parseFloat(document.getElementById("amount").value);
@@ -405,6 +410,7 @@ amountInput.addEventListener("input", () => {
   percentageText.textContent = `${slider.value}%`;
 });
   async function claimRewards() {
+  async function claimRewards() {
   if (!walletAddress) return alert("No active wallet session. Login on landing page first.");
   try {
     const tx = await contract.claimReward();
@@ -427,7 +433,10 @@ setTimeout(() => { txBox.classList.add("hidden"); }, 10000);
 async function depositRewards() {
   const admin = "0x58c5796edc7001b949693cc2655d190db54c271f";
   if (!walletAddress) {
+  if (!walletAddress) {
     alert("No active wallet session. Login on landing page first.");
+    return;
+  }
     return;
   }
 

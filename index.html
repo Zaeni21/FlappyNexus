@@ -100,9 +100,550 @@
       </a>
     </div>
   </footer>
-
   <audio id="bg-music" src="https://aqua-glad-tern-369.mypinata.cloud/ipfs/bafybeifokiywb2vpbbuwifddxxyr6kxft7bo4j3isoojfdgox7v6tcer7q" loop hidden></audio>
 
     <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
+            { internalType: "address", name: "addr", type: "address" },
+            { internalType: "uint256", name: "score", type: "uint256" }
+          ],
+          internalType: "struct FlappyScore.Player[]",
+          name: "",
+          type: "tuple[]"
+        }],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "uint256", name: "score", type: "uint256" },
+          { internalType: "uint8", name: "v", type: "uint8" },
+          { internalType: "bytes32", name: "r", type: "bytes32" },
+          { internalType: "bytes32", name: "s", type: "bytes32" }
+        ],
+        name: "submitScore",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      }
+    ];
+
+    const gameCanvas = document.getElementById("gameCanvas");
+    const gameCtx = gameCanvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const hudEl = document.getElementById("hud");
+    const walletTextEl = document.getElementById("wallet-text");
+    const walletStatusEl = document.getElementById("wallet-status");
+    const walletPopupEl = document.getElementById("walletPopup");
+    const modeSelectionEl = document.getElementById("mode-selection");
+    const starBgEl = document.getElementById("star-bg");
+    const starfieldEl = document.getElementById("starfield");
+    const socialFooterEl = document.getElementById("social-footer");
+    const toastEl = document.getElementById("toast");
+    const bgMusicEl = document.getElementById("bg-music");
+
+    const birdImage = new Image();
+    birdImage.src = "https://ipfs.io/ipfs/bafybeielnggeoq3acfq2kpr7mm2ofkhovwppowxllfaev6ke47rwsde3k4";
+    const pipeImage = new Image();
+    pipeImage.src = "https://gateway.pinata.cloud/ipfs/bafkreicbretqtvephhgmcr7rb57rjxxubbpkxie5bl7ycm5wciqf7bjlsi";
+
+    const gameState = {
+      onchain: false,
+      isConnected: false,
+      walletAddress: null,
+      gameStarted: false,
+      gameOver: false,
+      score: 0,
+      frame: 0,
+      pipes: []
+    };
+
+    const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
+    // IMPORTANT: Never expose Privy app secret in frontend code.
+    // Keep it only on secure backend / server environment variables.
+    const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
+    const PRIVY_BACKEND_VERIFY_ENDPOINT = (window.PRIVY_BACKEND_VERIFY_ENDPOINT || `${window.location.origin}/api/privy/verify`).trim();
+    let privyClient = null;
+
+    const translations = {
+      en: {
+        wallet_connect: "Connect Privy", tagline: "WEB3 ARCADE EXPERIENCE", subtitle: "Build the highest score, then submit to onchain leaderboard.",
+        play_offchain: "Play Offchain", play_onchain: "Play Onchain", leaderboard: "Leaderboard", mint: "Mint NFT Skin",
+        tip: 'Tip: press <span class="font-semibold text-gray-200">Space</span> / tap screen to fly.'
+      },
+      id: {
+        wallet_connect: "Connect Privy", tagline: "WEB3 ARCADE EXPERIENCE", subtitle: "Build score setinggi mungkin, lalu submit ke onchain leaderboard.",
+        play_offchain: "Main Offchain", play_onchain: "Main Onchain", leaderboard: "Papan Skor", mint: "Mint NFT Skin",
+        tip: 'Tips: tekan <span class="font-semibold text-gray-200">Space</span> / tap layar untuk terbang.'
+      }
+    };
+
+    function setLanguage(lang) {
+      const dictionary = translations[lang] || translations.id;
+      document.documentElement.lang = lang === "en" ? "en" : "id";
+      Object.entries(dictionary).forEach(([key, value]) => {
+        document.querySelectorAll(`[data-i18n="${key}"]`).forEach(node => node.innerHTML = value);
+      });
+      localStorage.setItem("flappy_lang", lang);
+    }
+
+    async function initPrivy() {
+      if (!window.Privy) throw new Error("Privy SDK belum termuat.");
+      if (!PRIVY_APP_ID) throw new Error("Privy APP ID belum di-set.");
+      if (privyClient) return privyClient;
+      if (typeof window.Privy.create !== "function") throw new Error("Versi Privy SDK tidak kompatibel.");
+      privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
+      return privyClient;
+    }
+
+    function getEthersProvider() {
+      const providerSource = gameState.privyProvider || window.ethereum;
+      if (!providerSource) throw new Error("Provider tidak ditemukan. Connect Privy terlebih dulu.");
+      return new ethers.providers.Web3Provider(providerSource);
+    }
+
+    function getPrivyIdentityToken(loginResult, privy) {
+      return (
+        loginResult?.identityToken ||
+        loginResult?.identity_token ||
+        loginResult?.idToken ||
+        loginResult?.token ||
+        privy?.user?.idToken ||
+        privy?.session?.identityToken ||
+        ""
+      );
+    }
+
+    async function verifyPrivySessionOnBackend(identityToken) {
+      if (!identityToken) {
+        throw new Error("Identity token dari Privy tidak ditemukan.");
+      }
+
+      const response = await fetch(PRIVY_BACKEND_VERIFY_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ identityToken })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || "Verifikasi session Privy ke backend gagal.");
+      }
+
+      return payload;
+    }
+
+    const bird = { x: 80, y: 180, width: 52, height: 52, velocity: 0, gravity: 0.065, lift: -2.2 };
+    const pipeGap = 170;
+    const pipeWidth = 60;
+
+    function resizeCanvases() {
+      gameCanvas.width = window.innerWidth;
+      gameCanvas.height = window.innerHeight;
+      if (!gameState.gameStarted) {
+        bird.y = gameCanvas.height / 2;
+      }
+    }
+
+    function showToast(message, tone = "info") {
+      toastEl.textContent = message;
+      toastEl.classList.remove("hidden", "text-red-300", "text-green-300", "text-yellow-300");
+
+      if (tone === "error") toastEl.classList.add("text-red-300");
+      if (tone === "success") toastEl.classList.add("text-green-300");
+      if (tone === "warning") toastEl.classList.add("text-yellow-300");
+
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toastEl.classList.add("hidden"), 2500);
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `Score: ${gameState.score}`;
+    }
+
+    function drawBird() {
+      if (birdImage.complete) {
+        gameCtx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+      }
+    }
+
+    function drawPipes() {
+      gameState.pipes.forEach(pipe => {
+        if (pipeImage.complete) {
+          gameCtx.drawImage(pipeImage, pipe.x, 0, pipeWidth, pipe.top);
+          gameCtx.drawImage(pipeImage, pipe.x, gameCanvas.height - pipe.bottom, pipeWidth, pipe.bottom);
+        }
+      });
+    }
+
+    function spawnPipe() {
+      const top = Math.random() * (gameCanvas.height - pipeGap - 200) + 60;
+      const bottom = gameCanvas.height - top - pipeGap;
+      gameState.pipes.push({ x: gameCanvas.width, top, bottom, padding: 10 });
+    }
+
+    function hasCollision(pipe) {
+      const collidesHorizontally = bird.x < pipe.x + pipeWidth - pipe.padding && bird.x + bird.width > pipe.x + pipe.padding;
+      const collidesVertically = bird.y < pipe.top || bird.y + bird.height > gameCanvas.height - pipe.bottom;
+      return collidesHorizontally && collidesVertically;
+    }
+
+    function updateGame() {
+      if (gameState.gameOver || !gameState.gameStarted) return;
+
+      gameState.frame += 1;
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      if (gameState.frame % 145 === 0) spawnPipe();
+
+      for (let i = gameState.pipes.length - 1; i >= 0; i -= 1) {
+        const pipe = gameState.pipes[i];
+        pipe.x -= 1.32;
+
+        if (pipe.x + pipeWidth < 0) {
+          gameState.pipes.splice(i, 1);
+          gameState.score += 1;
+          updateScore();
+          continue;
+        }
+
+        if (hasCollision(pipe)) {
+          showGameOver();
+          return;
+        }
+      }
+
+      if (bird.y + bird.height > gameCanvas.height || bird.y < 0) {
+        showGameOver();
+        return;
+      }
+
+      gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+      drawBird();
+      drawPipes();
+      requestAnimationFrame(updateGame);
+    }
+
+    function showGameOver() {
+      if (gameState.gameOver) return;
+      gameState.gameOver = true;
+      bgMusicEl.pause();
+
+      const overlay = document.createElement("div");
+      overlay.id = "gameOverOverlay";
+      overlay.className = "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-6";
+
+      const submitButton = gameState.onchain
+        ? '<button id="submitBtn" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg font-bold">Submit Score</button>'
+        : "";
+
+      overlay.innerHTML = `
+        <div class="glass-panel rounded-2xl px-8 py-7 text-center max-w-sm w-full">
+          <h2 class="text-3xl font-extrabold mb-2">Game Over</h2>
+          <p class="text-gray-200 mb-6">Final Score: <span class="font-bold">${gameState.score}</span></p>
+          <div class="flex justify-center gap-3">
+            <button id="restartBtn" class="bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-lg font-bold">Play Again</button>
+            ${submitButton}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      document.getElementById("restartBtn").addEventListener("click", restartGame);
+
+      if (gameState.onchain) {
+        const submitBtn = document.getElementById("submitBtn");
+        let submitted = false;
+        submitBtn?.addEventListener("click", async () => {
+          if (submitted) return;
+          submitted = true;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Submitting...";
+
+          try {
+            await submitScoreOnchain(gameState.score);
+            submitBtn.textContent = "Submitted";
+            submitBtn.classList.remove("bg-green-600", "hover:bg-green-700");
+            submitBtn.classList.add("bg-green-700");
+          } catch (error) {
+            submitBtn.textContent = "Error";
+            submitBtn.classList.remove("bg-green-600", "hover:bg-green-700");
+            submitBtn.classList.add("bg-red-600");
+            submitted = false;
+          }
+        });
+      }
+    }
+
+    function restartGame() {
+      const overlay = document.getElementById("gameOverOverlay");
+      overlay?.remove();
+
+      gameState.gameOver = false;
+      gameState.score = 0;
+      gameState.frame = 0;
+      gameState.pipes = [];
+
+      bird.y = gameCanvas.height / 2;
+      bird.velocity = 0;
+
+      updateScore();
+      bgMusicEl.play().catch(() => {});
+      requestAnimationFrame(updateGame);
+    }
+
+    function beginGame(onchainMode) {
+      gameState.onchain = onchainMode;
+      gameState.gameStarted = true;
+      gameState.gameOver = false;
+      gameState.score = 0;
+      gameState.frame = 0;
+      gameState.pipes = [];
+      bird.y = gameCanvas.height / 2;
+      bird.velocity = 0;
+
+      modeSelectionEl.style.display = "none";
+      starBgEl.style.display = "none";
+      starfieldEl.style.display = "none";
+      socialFooterEl.style.display = "none";
+      hudEl.classList.remove("hidden");
+
+      updateScore();
+      bgMusicEl.play().catch(() => showToast("Audio diblokir browser. Tap layar dulu.", "warning"));
+      requestAnimationFrame(updateGame);
+    }
+
+    async function connectWallet() {
+      try {
+        const privy = await initPrivy();
+        const loginResult = await privy.login();
+        const identityToken = getPrivyIdentityToken(loginResult, privy);
+
+        await verifyPrivySessionOnBackend(identityToken);
+
+        const connectedAddress = loginResult?.wallet?.address || privy?.user?.wallet?.address;
+        const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
+
+        if (!providerFromPrivy && window.ethereum) {
+          await window.ethereum.request({ method: "wallet_addEthereumChain", params: [chainConfig] });
+        }
+
+        const provider = providerFromPrivy ? new ethers.providers.Web3Provider(providerFromPrivy) : getEthersProvider();
+        const signerAddress = connectedAddress || await provider.getSigner().getAddress();
+
+        gameState.privyProvider = provider.provider;
+        gameState.walletAddress = signerAddress;
+        gameState.isConnected = true;
+
+        setLanguage(localStorage.getItem("flappy_lang") || "id");
+    updateWalletStatus();
+        walletPopupEl.classList.remove("hidden");
+        showToast("Privy connected. Siap main onchain!", "success");
+      } catch (error) {
+        console.error(error);
+        showToast(error.message || "Gagal connect Privy.", "error");
+      }
+    }
+
+    function disconnectWallet() {
+      gameState.isConnected = false;
+      gameState.walletAddress = null;
+      walletPopupEl.classList.add("hidden");
+      setLanguage(localStorage.getItem("flappy_lang") || "id");
+    updateWalletStatus();
+      showToast("Wallet disconnected.");
+    }
+
+    function updateWalletStatus() {
+      if (gameState.isConnected && gameState.walletAddress) {
+        walletStatusEl.classList.remove("bg-gray-500");
+        walletStatusEl.classList.add("bg-blue-500");
+        walletTextEl.textContent = `${gameState.walletAddress.slice(0, 6)}...${gameState.walletAddress.slice(-3)}`;
+        return;
+      }
+
+      walletStatusEl.classList.remove("bg-blue-500");
+      walletStatusEl.classList.add("bg-gray-500");
+      walletTextEl.textContent = translations[localStorage.getItem("flappy_lang") || "id"].wallet_connect;
+    }
+
+    async function submitScoreOnchain(score) {
+      const provider = getEthersProvider();
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+
+      const hash = ethers.utils.solidityKeccak256(["address", "uint256"], [address, score]);
+      const signature = await signer.signMessage(ethers.utils.arrayify(hash));
+      const { v, r, s } = ethers.utils.splitSignature(signature);
+
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      const tx = await contract.submitScore(score, v, r, s);
+      await tx.wait();
+      showToast("Score berhasil dikirim ke blockchain.", "success");
+    }
+
+    async function showLeaderboard() {
+      try {
+        const provider = getEthersProvider();
+        const contract = new ethers.Contract(contractAddress, abi, provider);
+        const players = await contract.getTopPlayers();
+
+        const leaderboardList = document.getElementById("leaderboard-list");
+        leaderboardList.innerHTML = "";
+
+        let userAddress = "";
+        try {
+          userAddress = await provider.getSigner().getAddress();
+        } catch (_) {
+          userAddress = "";
+        }
+
+        players.forEach((player, index) => {
+          const item = document.createElement("li");
+          const shortAddr = `${player.addr.slice(0, 6)}...${player.addr.slice(-4)}`;
+          item.textContent = `${index + 1}. ${shortAddr} - ${player.score}`;
+
+          if (userAddress && player.addr.toLowerCase() === userAddress.toLowerCase()) {
+            item.classList.add("text-cyan-300", "font-bold");
+          }
+
+          leaderboardList.appendChild(item);
+        });
+
+        document.getElementById("leaderboard-popup").classList.remove("hidden");
+        const adminSection = document.getElementById("admin-distribute");
+        adminSection.classList.toggle("hidden", userAddress.toLowerCase() !== adminAddress.toLowerCase());
+      } catch (error) {
+        console.error("Leaderboard error:", error);
+        showToast("Gagal mengambil leaderboard.", "error");
+      }
+    }
+
+    async function distributeRewardsFromContract() {
+      try {
+        const provider = getEthersProvider();
+        const signer = provider.getSigner();
+        const wallet = await signer.getAddress();
+
+        if (wallet.toLowerCase() !== adminAddress.toLowerCase()) {
+          showToast("Hanya admin yang bisa distribusi reward.", "error");
+          return;
+        }
+
+        const contract = new ethers.Contract(contractAddress, abi, signer);
+        const tx = await contract.distributeRewards({ value: ethers.utils.parseEther("5") });
+        await tx.wait();
+        showToast("Reward berhasil didistribusikan.", "success");
+      } catch (error) {
+        console.error(error);
+        showToast(`Distribusi gagal: ${error.message}`, "error");
+      }
+    }
+
+    async function mintNFT() {
+      if (!gameState.isConnected) {
+        showToast("Connect wallet dulu untuk mint NFT.", "warning");
+        return;
+      }
+
+      try {
+        const provider = getEthersProvider();
+        const signer = provider.getSigner();
+
+        const contract = new ethers.Contract(flappyNftAddress, ["function mint() public"], signer);
+        const tx = await contract.mint();
+        await tx.wait();
+        showToast("NFT berhasil di-mint!", "success");
+      } catch (error) {
+        console.error(error);
+        showToast(`Minting gagal: ${error.message}`, "error");
+      }
+    }
+
+    function flap() {
+      if (!gameState.gameStarted || gameState.gameOver) return;
+      bird.velocity = bird.lift;
+    }
+
+    document.querySelector('[data-action="start-offchain"]').addEventListener("click", () => beginGame(false));
+    document.querySelector('[data-action="start-onchain"]').addEventListener("click", () => {
+      if (!gameState.isConnected) {
+        showToast("Connect wallet dulu sebelum main onchain.", "warning");
+        return;
+      }
+      beginGame(true);
+    });
+    document.querySelector('[data-action="show-leaderboard"]').addEventListener("click", showLeaderboard);
+    document.querySelector('[data-action="mint"]').addEventListener("click", mintNFT);
+
+    document.getElementById("walletDisplay").addEventListener("click", async () => {
+      if (!gameState.isConnected) {
+        await connectWallet();
+      } else {
+        walletPopupEl.classList.toggle("hidden");
+      }
+    });
+
+    document.getElementById("disconnectBtn").addEventListener("click", disconnectWallet);
+    document.getElementById("closeLeaderboardBtn").addEventListener("click", () => {
+      document.getElementById("leaderboard-popup").classList.add("hidden");
+    });
+    document.getElementById("distributeBtn").addEventListener("click", distributeRewardsFromContract);
+
+    window.addEventListener("keydown", event => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        flap();
+      }
+      if (event.code === "Enter" && gameState.gameOver) {
+        restartGame();
+      }
+    });
+
+    document.getElementById("lang-en").addEventListener("click", () => setLanguage("en"));
+    document.getElementById("lang-id").addEventListener("click", () => setLanguage("id"));
+
+    window.addEventListener("touchstart", flap, { passive: true });
+    window.addEventListener("resize", resizeCanvases);
+
+    const starCtx = starfieldEl.getContext("2d");
+    const stars = Array.from({ length: 120 }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: Math.random() * 1.4 + 0.3,
+      speed: Math.random() * 0.5 + 0.2
+    }));
+
+    function animateStars() {
+      starCtx.clearRect(0, 0, starfieldEl.width, starfieldEl.height);
+      starCtx.fillStyle = "rgba(255, 255, 255, 0.9)";
+
+      stars.forEach(star => {
+        starCtx.beginPath();
+        starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        starCtx.fill();
+
+        star.y += star.speed;
+        if (star.y > starfieldEl.height) {
+          star.y = 0;
+          star.x = Math.random() * starfieldEl.width;
+        }
+      });
+
+      requestAnimationFrame(animateStars);
+    }
+
+    resizeCanvases();
+    setLanguage(localStorage.getItem("flappy_lang") || "id");
+    updateWalletStatus();
+    starfieldEl.width = window.innerWidth;
+    starfieldEl.height = window.innerHeight;
+    animateStars();
+  </script>
 </body>
 </html>

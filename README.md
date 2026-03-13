@@ -30,6 +30,12 @@
 
 Use the backend verifier to securely validate Privy identity tokens using server-side secrets.
 
+---
+
+## Privy Backend Auth (Node.js)
+
+Untuk verifikasi auth token Privy secara aman (pakai `PRIVY_APP_SECRET` di server), gunakan backend kecil di folder `backend/` (tanpa dependency npm tambahan).
+
 ### Setup
 
 ```bash
@@ -62,6 +68,17 @@ Request body:
 
 - Never put `PRIVY_APP_SECRET` in frontend code.
 - Frontend should verify session through backend endpoint: `POST /api/privy/verify`.
+
+Body:
+
+```json
+{
+  "identityToken": "<token-dari-privy-frontend>"
+}
+```
+
+> Jangan pernah simpan `PRIVY_APP_SECRET` di frontend.
+> Frontend FlappyNexus diarahkan memverifikasi sesi Privy ke endpoint backend `POST /api/privy/verify`.
 
 ## Developer
 
