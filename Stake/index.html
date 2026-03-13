@@ -70,11 +70,22 @@
   let balance = 0, totalStaked = 0;
   let mode = "stake";
 
-  const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
-  const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
-  let privyClient = null;
+  function resolvePublicEnv(name) {
+    return (
+      window[name] ||
+      window[`NEXT_PUBLIC_${name}`] ||
+      document.querySelector(`meta[name="${name}"]`)?.content ||
+      document.querySelector(`meta[name="NEXT_PUBLIC_${name}"]`)?.content ||
+      ""
+    );
+  }
 
-  async function waitForPrivySdk(maxWaitMs = 6000) {
+  const PRIVY_APP_ID = resolvePublicEnv("PRIVY_APP_ID") || "cmmnuhuc601up0dlbr16yfolt";
+  const PRIVY_CLIENT_ID = resolvePublicEnv("PRIVY_CLIENT_ID");
+  let privyClient = null;
+  let privyInitError = null;
+
+  async function waitForPrivySdk(maxWaitMs = 15000) {
     const started = Date.now();
     while (Date.now() - started < maxWaitMs) {
       if (window.Privy && typeof window.Privy.create === "function") return;
@@ -83,18 +94,39 @@
     throw new Error("Privy SDK failed to load.");
   }
 
+  function loadPrivySdkScript() {
+    const existingScript = document.querySelector('script[data-privy-sdk="true"], script[src*="auth.privy.io/js/auth.js"]');
+    if (existingScript) return;
+
+    const script = document.createElement("script");
+    script.src = "https://auth.privy.io/js/auth.js";
+    script.async = true;
+    script.setAttribute("data-privy-sdk", "true");
+    document.head.appendChild(script);
+  }
+
   async function initPrivy() {
     if (privyClient) return privyClient;
     if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
+
+    loadPrivySdkScript();
     await waitForPrivySdk();
     privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
+    privyInitError = null;
     return privyClient;
   }
 
-  const privyReadyPromise = initPrivy().catch(error => {
+  async function getPrivyClient() {
+    if (privyClient) return privyClient;
+
+    try {
+      return await initPrivy();
+    } catch (error) {
+      privyInitError = error;
       console.error("Privy init error:", error?.message || error);
       throw error;
-    });
+    }
+  }
 
   const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
@@ -326,7 +358,11 @@ document.getElementById("poolBalance").textContent =
     const status = document.getElementById("walletStatus");
 
     try {
-      const privy = await privyReadyPromise;
+      if (privyInitError) {
+        privyClient = null;
+      }
+
+      const privy = await getPrivyClient();
       const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
       const existingAddress = privy?.user?.wallet?.address;
 

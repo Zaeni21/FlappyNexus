@@ -4,13 +4,28 @@ import { walletPopupEl } from "./dom.js";
 import { setLanguage, showToast, updateWalletStatus } from "./ui.js";
 
 const { ethers } = window;
-const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
-const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
-const PRIVY_BACKEND_VERIFY_ENDPOINT = "/api/privy/verify";
+
+function resolvePublicEnv(name) {
+  if (typeof window === "undefined") return "";
+
+  return (
+    window[name] ||
+    window[`NEXT_PUBLIC_${name}`] ||
+    document.querySelector(`meta[name="${name}"]`)?.content ||
+    document.querySelector(`meta[name="NEXT_PUBLIC_${name}"]`)?.content ||
+    ""
+  );
+}
+
+const PRIVY_APP_ID = resolvePublicEnv("PRIVY_APP_ID") || "cmmnuhuc601up0dlbr16yfolt";
+const PRIVY_CLIENT_ID = resolvePublicEnv("PRIVY_CLIENT_ID");
+const PRIVY_BACKEND_VERIFY_ENDPOINT = resolvePublicEnv("PRIVY_BACKEND_VERIFY_ENDPOINT") || "/api/privy/verify";
+const PRIVY_REQUIRE_BACKEND_VERIFY = String(resolvePublicEnv("PRIVY_REQUIRE_BACKEND_VERIFY")).toLowerCase() === "true";
 
 let privyClient = null;
+let privyInitError = null;
 
-async function waitForPrivySdk(maxWaitMs = 6000) {
+async function waitForPrivySdk(maxWaitMs = 15000) {
   const started = Date.now();
   while (Date.now() - started < maxWaitMs) {
     if (window.Privy && typeof window.Privy.create === "function") return;
@@ -19,18 +34,39 @@ async function waitForPrivySdk(maxWaitMs = 6000) {
   throw new Error("Privy SDK failed to load.");
 }
 
+function loadPrivySdkScript() {
+  const existingScript = document.querySelector('script[data-privy-sdk="true"], script[src*="auth.privy.io/js/auth.js"]');
+  if (existingScript) return;
+
+  const script = document.createElement("script");
+  script.src = "https://auth.privy.io/js/auth.js";
+  script.async = true;
+  script.setAttribute("data-privy-sdk", "true");
+  document.head.appendChild(script);
+}
+
 async function initPrivy() {
   if (privyClient) return privyClient;
   if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
+
+  loadPrivySdkScript();
   await waitForPrivySdk();
   privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
+  privyInitError = null;
   return privyClient;
 }
 
-const privyReadyPromise = initPrivy().catch(error => {
-  console.error("Privy init error:", error?.message || error);
-  throw error;
-});
+async function getPrivyClient() {
+  if (privyClient) return privyClient;
+
+  try {
+    return await initPrivy();
+  } catch (error) {
+    privyInitError = error;
+    console.error("Privy init error:", error?.message || error);
+    throw error;
+  }
+}
 
 function getPrivyIdentityToken(loginResult, privy) {
   return (
@@ -47,18 +83,27 @@ function getPrivyIdentityToken(loginResult, privy) {
 async function verifyPrivySessionOnBackend(identityToken) {
   if (!identityToken) throw new Error("Privy identity token not found.");
 
-  const response = await fetch(PRIVY_BACKEND_VERIFY_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identityToken })
-  });
+  try {
+    const response = await fetch(PRIVY_BACKEND_VERIFY_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identityToken })
+    });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error || "Verifikasi session Privy ke backend gagal.");
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.ok) {
+      throw new Error(payload?.error || "Verifikasi session Privy ke backend gagal.");
+    }
+
+    return payload;
+  } catch (error) {
+    if (PRIVY_REQUIRE_BACKEND_VERIFY) {
+      throw error;
+    }
+
+    console.warn("Skipping backend Privy verification:", error?.message || error);
+    return { ok: false, skipped: true };
   }
-
-  return payload;
 }
 
 export function getEthersProvider() {
@@ -90,7 +135,7 @@ async function applyPrivySession(privy, loginResult = null) {
 
 export async function tryRestorePrivySession() {
   try {
-    const privy = await privyReadyPromise;
+    const privy = await getPrivyClient();
     const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
     const existingAddress = privy?.user?.wallet?.address;
     if (!providerFromPrivy || !existingAddress) return;
@@ -104,7 +149,11 @@ export async function tryRestorePrivySession() {
 
 export async function connectWallet() {
   try {
-    const privy = await privyReadyPromise;
+    if (privyInitError) {
+      privyClient = null;
+    }
+
+    const privy = await getPrivyClient();
     const loginResult = await privy.login();
     await applyPrivySession(privy, loginResult);
     showToast("Privy connected. Ready for onchain play!", "success");
@@ -116,7 +165,7 @@ export async function connectWallet() {
 
 export async function disconnectWallet() {
   try {
-    const privy = await privyReadyPromise;
+    const privy = await getPrivyClient();
     await privy?.logout?.();
   } catch (error) {
     console.warn("Privy logout warning:", error?.message || error);
