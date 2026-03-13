@@ -3,6 +3,9 @@ import { gameState } from "./state.js";
 import { walletPopupEl } from "./dom.js";
 import { setLanguage, showToast, updateWalletStatus } from "./ui.js";
 
+// Load Privy SDK via CDN (fixes broken auth.privy.io host and adblock issues)
+import Privy from "https://cdn.jsdelivr.net/npm/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs";
+
 const { ethers } = window;
 const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
 const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
@@ -10,47 +13,25 @@ const PRIVY_BACKEND_VERIFY_ENDPOINT = "/api/privy/verify";
 
 let privyClient = null;
 
-async function waitForPrivySdk(maxWaitMs = 10000) {
-  const started = Date.now();
-  while (Date.now() - started < maxWaitMs) {
-    if (window.Privy && typeof window.Privy.create === "function") return true;
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  return false;
-}
-
-async function loadPrivyScript() {
-  return new Promise((resolve, reject) => {
-    if (window.Privy) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://auth.privy.io/js/auth.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Privy script'));
-    document.head.appendChild(script);
-  });
+function ensurePrivyGlobal() {
+  if (window.Privy && typeof window.Privy.create === "function") return;
+  window.Privy = {
+    create: (opts) => new Privy(opts),
+  };
 }
 
 async function initPrivy() {
   if (privyClient) return privyClient;
   if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
-  let sdkLoaded = await waitForPrivySdk();
-  if (!sdkLoaded) {
-    try {
-      await loadPrivyScript();
-      sdkLoaded = await waitForPrivySdk(5000); // wait another 5s
-    } catch (error) {
-      console.warn('Failed to load Privy script dynamically:', error);
-    }
-  }
-  if (!sdkLoaded) {
-    console.warn("Privy SDK failed to load. Onchain features will be disabled. Check ad blocker.");
+  ensurePrivyGlobal();
+
+  try {
+    privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
+    return privyClient;
+  } catch (error) {
+    console.warn("Privy init failed:", error);
     return null;
   }
-  privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
-  return privyClient;
 }
 
 const privyReadyPromise = initPrivy().catch(error => {
@@ -64,10 +45,30 @@ function getPrivyIdentityToken(loginResult, privy) {
     loginResult?.identity_token ||
     loginResult?.idToken ||
     loginResult?.token ||
+    privy?.getIdentityToken?.() ||
     privy?.user?.idToken ||
     privy?.session?.identityToken ||
     ""
   );
+}
+
+async function getPrivyWalletProvider(privy) {
+  // Embedded wallet can persist across reloads if the session exists.
+  // This returns an EIP-1193 provider that ethers can consume.
+  return await privy.embeddedWallet.create();
+}
+
+async function connectPrivy(privy) {
+  const provider = await getPrivyWalletProvider(privy);
+  const accounts = await provider.request({ method: "eth_requestAccounts" });
+  const address = Array.isArray(accounts) ? accounts[0] : null;
+  const identityToken = await privy.getIdentityToken();
+
+  return {
+    wallet: { address },
+    identityToken,
+    provider,
+  };
 }
 
 async function verifyPrivySessionOnBackend(identityToken) {
@@ -93,21 +94,20 @@ export function getEthersProvider() {
   return new ethers.providers.Web3Provider(providerSource);
 }
 
-async function applyPrivySession(privy, loginResult = null) {
-  const identityToken = getPrivyIdentityToken(loginResult, privy);
+async function applyPrivySession(privy, session = null) {
+  const identityToken = getPrivyIdentityToken(session, privy);
   if (identityToken) {
     await verifyPrivySessionOnBackend(identityToken);
   }
 
-  const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
+  const providerFromPrivy = await getPrivyWalletProvider(privy);
   if (!providerFromPrivy) throw new Error("Privy wallet provider is unavailable.");
 
   const provider = new ethers.providers.Web3Provider(providerFromPrivy);
-  const connectedAddress = loginResult?.wallet?.address || privy?.user?.wallet?.address;
-  const signerAddress = connectedAddress || await provider.getSigner().getAddress();
+  const connectedAddress = session?.wallet?.address || (await provider.getSigner().getAddress());
 
   gameState.privyProvider = provider.provider;
-  gameState.walletAddress = signerAddress;
+  gameState.walletAddress = connectedAddress;
   gameState.isConnected = true;
   setLanguage(localStorage.getItem("flappy_lang") || "en");
   updateWalletStatus();
@@ -118,11 +118,12 @@ export async function tryRestorePrivySession() {
   try {
     const privy = await privyReadyPromise;
     if (!privy) return; // Privy not loaded
-    const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
-    const existingAddress = privy?.user?.wallet?.address;
-    if (!providerFromPrivy || !existingAddress) return;
 
-    await applyPrivySession(privy, { wallet: { address: existingAddress } });
+    const identityToken = await privy.getIdentityToken();
+    if (!identityToken) return;
+
+    // If we can get a token, assume a session exists and try to use it.
+    await applyPrivySession(privy, { identityToken });
     showToast("Privy session restored.", "success");
   } catch (error) {
     console.warn("Privy restore skipped:", error?.message || error);
@@ -136,8 +137,9 @@ export async function connectWallet() {
       showToast("Privy SDK not loaded. Please disable ad blocker or refresh the page.", "error");
       return;
     }
-    const loginResult = await privy.login();
-    await applyPrivySession(privy, loginResult);
+
+    const session = await connectPrivy(privy);
+    await applyPrivySession(privy, session);
     showToast("Privy connected. Ready for onchain play!", "success");
   } catch (error) {
     console.error(error);

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stake NEX</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="https://auth.privy.io/js/auth.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
@@ -73,22 +72,23 @@
 
   const PRIVY_APP_ID = window.PRIVY_APP_ID || "cmmnuhuc601up0dlbr16yfolt";
   const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
-  const PRIVY_CLIENT_ID = window.PRIVY_CLIENT_ID || "";
-  let privyClient = null;
 
-  async function waitForPrivySdk(maxWaitMs = 6000) {
-    const started = Date.now();
-    while (Date.now() - started < maxWaitMs) {
-      if (window.Privy && typeof window.Privy.create === "function") return;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    throw new Error("Privy SDK failed to load.");
+  let PrivyModule;
+
+  async function loadPrivySdk() {
+    if (PrivyModule) return PrivyModule;
+    const module = await import("https://cdn.jsdelivr.net/npm/@privy-io/js-sdk-core@0.60.5/dist/esm/index.mjs");
+    PrivyModule = module.default;
+    window.Privy = {
+      create: (opts) => new PrivyModule(opts),
+    };
+    return PrivyModule;
   }
 
   async function initPrivy() {
     if (privyClient) return privyClient;
     if (!PRIVY_APP_ID) throw new Error("Privy APP ID is not configured.");
-    await waitForPrivySdk();
+    await loadPrivySdk();
     privyClient = window.Privy.create({ appId: PRIVY_APP_ID, clientId: PRIVY_CLIENT_ID || undefined });
     return privyClient;
   }
@@ -97,8 +97,6 @@
       console.error("Privy init error:", error?.message || error);
       throw error;
     });
-
-  const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
 
   const contractAddress = "0x5D1a7d8f09c14D21fBC27298C83991c3a6BEA880"; // Nexus
   const abi = [
@@ -311,14 +309,16 @@ document.getElementById("poolBalance").textContent =
 }
 }
   async function applyPrivyStakeSession(privy) {
-    const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
+    const providerFromPrivy = await privy.embeddedWallet.create();
     if (!providerFromPrivy) throw new Error("Privy wallet provider is unavailable.");
 
     provider = new ethers.providers.Web3Provider(providerFromPrivy);
     signer = provider.getSigner();
 
-    walletAddress = privy?.user?.wallet?.address;
+    const accounts = await provider.listAccounts();
+    walletAddress = accounts?.[0];
     if (!walletAddress) throw new Error("Privy session has no wallet address.");
+
     contract = new ethers.Contract(contractAddress, abi, signer);
 
     document.getElementById("walletAddress").textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
@@ -332,10 +332,11 @@ document.getElementById("poolBalance").textContent =
 
     try {
       const privy = await privyReadyPromise;
-      const providerFromPrivy = await (privy?.wallets?.ethereum?.getProvider?.() || null);
-      const existingAddress = privy?.user?.wallet?.address;
+      if (!privy) throw new Error("Privy not available");
 
-      if (!providerFromPrivy || !existingAddress) {
+      // If there is an existing identity token, we can restore the embedded wallet session.
+      const identityToken = await privy.getIdentityToken();
+      if (!identityToken) {
         hint.textContent = "No active Privy session. Please login from landing page first.";
         status.classList.add("hidden");
         return;
